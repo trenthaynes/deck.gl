@@ -10,7 +10,7 @@ import type Effect from '../lib/effect';
 
 export type LayersPassRenderOptions = {
   target?: Framebuffer;
-  pass?: string;
+  pass: string;
   layers: Layer[];
   viewports: Viewport[];
   onViewportActive: (viewport: Viewport) => void;
@@ -19,6 +19,7 @@ export type LayersPassRenderOptions = {
   clearCanvas?: boolean;
   layerFilter?: (context: FilterContext) => boolean;
   moduleParameters?: any;
+  cullRect?: {x: number; y: number; width: number; height: number};
 };
 
 type DrawLayerParameters = {
@@ -33,6 +34,7 @@ type FilterContext = {
   viewport: Viewport;
   isPicking: boolean;
   renderPass: string;
+  cullRect?: {x: number; y: number; width: number; height: number};
 };
 
 export type RenderStats = {
@@ -104,13 +106,14 @@ export default class LayersPass extends Pass {
   // this is only done once for the parent viewport
   private _getDrawLayerParams(
     viewport: Viewport,
-    {layers, pass, layerFilter, effects, moduleParameters}: LayersPassRenderOptions
+    {layers, pass, layerFilter, effects, moduleParameters, cullRect}: LayersPassRenderOptions
   ): DrawLayerParameters[] {
     const drawLayerParams: DrawLayerParameters[] = [];
     const indexResolver = layerIndexResolver();
     const drawContext: FilterContext = {
       layer: layers[0],
       viewport,
+      cullRect,
       isPicking: pass.startsWith('picking'),
       renderPass: pass
     };

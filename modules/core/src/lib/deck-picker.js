@@ -175,6 +175,13 @@ export default class DeckPicker {
       deviceWidth: width,
       deviceHeight: height
     });
+    const cullRect = this._getPickingRect({
+      deviceX: x,
+      deviceY: y,
+      deviceRadius: radius,
+      deviceWidth: this.gl.canvas.wdith,
+      deviceHeight: this.gl.canvas.height
+    });
 
     let infos;
     const result = [];
@@ -189,6 +196,7 @@ export default class DeckPicker {
           viewports,
           onViewportActive,
           deviceRect,
+          cullRect,
           effects,
           pass: `picking:${mode}`,
           redrawReason: mode
@@ -210,6 +218,7 @@ export default class DeckPicker {
           viewports,
           onViewportActive,
           deviceRect: {x: pickInfo.pickedX, y: pickInfo.pickedY, width: 1, height: 1},
+          cullRect,
           effects,
           pass: `picking:${mode}`,
           redrawReason: 'pick-z',
@@ -310,6 +319,7 @@ export default class DeckPicker {
       viewports,
       onViewportActive,
       deviceRect,
+      cullRect: {x, y, width, height},
       effects,
       pass: `picking:${mode}`,
       redrawReason: mode
@@ -355,6 +365,7 @@ export default class DeckPicker {
     viewports,
     onViewportActive,
     deviceRect,
+    cullRect,
     effects,
     pass,
     redrawReason,
@@ -370,6 +381,7 @@ export default class DeckPicker {
       onViewportActive,
       pickingFBO,
       deviceRect,
+      cullRect,
       effects,
       pass,
       redrawReason,

@@ -52,6 +52,7 @@ export default class PickLayersPass extends LayersPass {
     onViewportActive,
     pickingFBO,
     deviceRect: {x, y, width, height},
+    cullRect,
     effects,
     pass = 'picking',
     pickZ
@@ -105,6 +106,7 @@ export default class PickLayersPass extends LayersPass {
       () =>
         super.render({
           target: pickingFBO,
+          cullRect,
           layers,
           layerFilter,
           views,

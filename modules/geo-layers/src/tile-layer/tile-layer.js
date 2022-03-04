@@ -1,4 +1,4 @@
-import {CompositeLayer, _flatten as flatten} from '@deck.gl/core';
+import {CompositeLayer, _flatten as flatten, _memoize as memoize} from '@deck.gl/core';
 import {GeoJsonLayer} from '@deck.gl/layers';
 
 import Tileset2D, {STRATEGY_DEFAULT} from './tileset-2d';
@@ -26,6 +26,25 @@ const defaultProps = {
   maxRequests: 6,
   zoomOffset: 0
 };
+
+const getCullBounds = memoize(({viewport, cullRect}) => {
+  const x = cullRect.x - viewport.x;
+  const y = cullRect.y - viewport.y;
+  const {width, height} = cullRect;
+  const p0 = viewport.unproject([x, y]);
+  if (width > 1 || height > 1) {
+    const p1 = viewport.unproject([x + width - 1, y]);
+    const p2 = viewport.unproject([x, y + height - 1]);
+    const p3 = viewport.unproject([x + width - 1, y + height - 1]);
+    return [
+      Math.min(p0[0], p1[0], p2[0], p3[0]),
+      Math.min(p0[1], p1[1], p2[1], p3[1]),
+      Math.max(p0[0], p1[0], p2[0], p3[0]),
+      Math.max(p0[1], p1[1], p2[1], p3[1])
+    ];
+  }
+  return [p0[0], p0[1], p0[0], p0[1]];
+});
 
 export default class TileLayer extends CompositeLayer {
   initializeState() {
@@ -227,8 +246,20 @@ export default class TileLayer extends CompositeLayer {
     });
   }
 
-  filterSubLayer({layer}) {
-    return layer.props.tile.isVisible;
+  filterSubLayer(context) {
+    const {tile} = context.layer.props;
+    if (!tile.isVisible) {
+      return false;
+    }
+    if (context.cullRect) {
+      const [minX, minY, maxX, maxY] = getCullBounds(context);
+      const {bbox} = tile;
+      if (context.viewport.isGeospatial) {
+        return bbox.west < maxX && bbox.east > minX && bbox.south < maxY && bbox.north > minY;
+      }
+      return bbox.left < maxX && bbox.right > minX && bbox.bottom < maxY && bbox.top > minY;
+    }
+    return true;
   }
 }
 
