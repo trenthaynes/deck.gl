@@ -179,7 +179,7 @@ export default class DeckPicker {
       deviceX: x,
       deviceY: y,
       deviceRadius: radius,
-      deviceWidth: this.gl.canvas.wdith,
+      deviceWidth: this.gl.canvas.width,
       deviceHeight: this.gl.canvas.height
     });
 
