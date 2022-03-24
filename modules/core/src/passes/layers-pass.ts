@@ -34,7 +34,10 @@ type FilterContext = {
   viewport: Viewport;
   isPicking: boolean;
   renderPass: string;
+  /** Culling bounds in screen space */
   cullRect?: {x: number; y: number; width: number; height: number};
+  /** Culling bounds in world space, [minX, minY, maxX, maxY] */
+  cullBounds?: [number, number, number, number] | null;
 };
 
 export type RenderStats = {
@@ -114,6 +117,7 @@ export default class LayersPass extends Pass {
       layer: layers[0],
       viewport,
       cullRect,
+      cullBounds: getCullBounds(viewport, cullRect),
       isPicking: pass.startsWith('picking'),
       renderPass: pass
     };
@@ -350,6 +354,35 @@ export function layerIndexResolver(
     return index;
   };
   return resolveLayerIndex;
+}
+
+/** Get culling bounds in world space */
+function getCullBounds(
+  /** Current viewport */
+  viewport: Viewport,
+  /** Culling rectangle in screen space */
+  cullRect?: {x: number; y: number; width: number; height: number}
+): [number, number, number, number] | null {
+  if (!cullRect) {
+    return null;
+  }
+
+  const x = cullRect.x - viewport.x;
+  const y = cullRect.y - viewport.y;
+  const {width, height} = cullRect;
+  const p0 = viewport.unproject([x, y]);
+  if (width > 1 || height > 1) {
+    const p1 = viewport.unproject([x + width - 1, y]);
+    const p2 = viewport.unproject([x, y + height - 1]);
+    const p3 = viewport.unproject([x + width - 1, y + height - 1]);
+    return [
+      Math.min(p0[0], p1[0], p2[0], p3[0]),
+      Math.min(p0[1], p1[1], p2[1], p3[1]),
+      Math.max(p0[0], p1[0], p2[0], p3[0]),
+      Math.max(p0[1], p1[1], p2[1], p3[1])
+    ];
+  }
+  return [p0[0], p0[1], p0[0], p0[1]];
 }
 
 // Convert viewport top-left CSS coordinates to bottom up WebGL coordinates
