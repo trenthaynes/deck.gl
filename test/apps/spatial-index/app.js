@@ -58,51 +58,51 @@ function createQuadkeyLayers() {
   );
 }
 
-function tileToQuadkey(tile) {
-  let index = '';
-  for (let z = tile.z; z > 0; z--) {
-    let b = 0;
-    const mask = 1 << (z - 1);
-    if ((tile.x & mask) !== 0) b++;
-    if ((tile.y & mask) !== 0) b += 2;
-    index += b.toString();
+const defaultProps = {
+  renderSubLayers: {type: 'function', value: props => new QuadkeyLayer(props), compare: false}
+};
+class QuadkeyTileLayer extends TileLayer {
+  tileToQuadkey(tile) {
+    let index = '';
+    for (let z = tile.z; z > 0; z--) {
+      let b = 0;
+      const mask = 1 << (z - 1);
+      if ((tile.x & mask) !== 0) b++;
+      if ((tile.y & mask) !== 0) b += 2;
+      index += b.toString();
+    }
+    return index;
   }
-  return index;
+
+  getTileData(tile) {
+    const {data, fetch} = this.props;
+    const {signal} = tile;
+    const quadkey = this.tileToQuadkey(tile);
+    tile.url = data.replace(/\{i\}/g, quadkey);
+
+    if (tile.url) {
+      return fetch(tile.url, {propName: 'data', layer: this, signal});
+    }
+    return null;
+  }
 }
+QuadkeyTileLayer.layerName = 'QuadkeyTileLayer';
+QuadkeyTileLayer.defaultProps = defaultProps;
 
 function createSpatialTileLayer() {
-  return new TileLayer({
+  return new QuadkeyTileLayer({
     // Restrict so we only load tiles that we have
+    data: 'data/{i}.json',
     minZoom: 4,
     maxZoom: 5,
     extent: [-112.5, 21.943045533438177, -90, 40.97989806962013],
+    getQuadkey: d => d.spatial_index,
 
-    getTileData(tile, layer) {
-      console.log(tile);
-      const {data, fetch} = layer.props;
-      const {signal} = tile;
-      const quadkey = tileToQuadkey(tile);
-
-      tile.url = `data/${quadkey}.json`;
-
-      if (tile.url) {
-        return fetch(tile.url, {propName: 'data', layer: layer, signal});
-      }
-      return null;
-    },
-
-    renderSubLayers: props => {
-      return new QuadkeyLayer(props, {
-        data: 'data/0231.json',
-        getQuadkey: d => d.spatial_index,
-
-        // Styling
-        getFillColor: d => [(d.value - 12) * 25, d.value * 8, 79],
-        getElevation: d => d.value - 12,
-        extruded: true,
-        elevationScale: 50000
-      });
-    }
+    // Styling
+    getFillColor: d => [(d.value - 12) * 25, d.value * 8, 79],
+    getElevation: d => d.value - 12,
+    extruded: true,
+    elevationScale: 50000
   });
 }
 
