@@ -6,7 +6,7 @@ import DeckGL from '@deck.gl/react';
 import {GeoJsonLayer} from '@deck.gl/layers';
 import {QuadkeyLayer} from '@deck.gl/geo-layers';
 
-const INITIAL_VIEW_STATE = {longitude: -73.95643, latitude: 40.8039, zoom: 4};
+const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5, pitch: 30, bearing: 330};
 const COUNTRIES =
   'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_scale_rank.geojson';
 
@@ -16,7 +16,7 @@ function Root() {
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={[createBasemap(), createSpatialTileLayer()]}
+        layers={[createBasemap(), ...createQuadkeyLayers()]}
       />
     </>
   );
@@ -36,6 +36,23 @@ function createBasemap() {
   });
 }
 
+function createQuadkeyLayers() {
+  return [0, 1, 2, 3].map(
+    n =>
+      new QuadkeyLayer({
+        id: `quadkey-${n}`,
+        data: `data/0231${n}.json`,
+        getQuadkey: d => d.spatial_index,
+
+        // Styling
+        getFillColor: d => [(d.value - 12) * 25, d.value * 8, 79],
+        getElevation: d => d.value - 12,
+        extruded: true,
+
+        elevationScale: 10000
+      })
+  );
+}
 function createSpatialTileLayer() {
   return new QuadkeyLayer({
     id: 'carto',
