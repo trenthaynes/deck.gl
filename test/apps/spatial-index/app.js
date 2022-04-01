@@ -16,11 +16,7 @@ function Root() {
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={[
-          createBasemap(),
-          // ...createQuadkeyLayers(),
-          createSpatialTileLayer()
-        ]}
+        layers={[createBasemap(), createSpatialTileLayer()]}
       />
     </>
   );
@@ -38,24 +34,6 @@ function createBasemap() {
     getLineColor: [60, 60, 60],
     getFillColor: [200, 200, 200]
   });
-}
-
-function createQuadkeyLayers() {
-  return [0, 1, 2, 3].map(
-    n =>
-      new QuadkeyLayer({
-        id: `quadkey-${n}`,
-        data: `data/0231${n}.json`,
-        getQuadkey: d => d.spatial_index,
-
-        // Styling
-        getFillColor: d => [(d.value - 12) * 25, d.value * 8, 79],
-        getElevation: d => d.value - 12,
-        extruded: true,
-
-        elevationScale: 50000
-      })
-  );
 }
 
 const defaultProps = {
