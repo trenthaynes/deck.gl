@@ -84,25 +84,4 @@ function createSpatialTileLayer() {
   });
 }
 
-function ObjectSelect({title, obj, value, onSelect}) {
-  const keys = Object.values(obj).sort();
-  return (
-    <>
-      <select
-        onChange={e => onSelect(e.target.value)}
-        style={{position: 'relative', padding: 4, margin: 2, width: 200}}
-        value={value}
-      >
-        <option hidden>{title}</option>
-        {keys.map(f => (
-          <option key={f} value={f}>
-            {`${title}: ${f}`}
-          </option>
-        ))}
-      </select>
-      <br></br>
-    </>
-  );
-}
-
 render(<Root />, document.body.appendChild(document.createElement('div')));
