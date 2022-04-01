@@ -167,7 +167,7 @@ export default class TileLayer extends CompositeLayer {
     tile.url = getURLFromTemplate(data, tile);
 
     if (getTileData) {
-      return getTileData(tile);
+      return getTileData(tile, this);
     }
     if (tile.url) {
       return fetch(tile.url, {propName: 'data', layer: this, signal});
