@@ -53,31 +53,20 @@ function createQuadkeyTileLayer() {
   });
 }
 
-const h3Available = [
-  '8148bf',
-  '82488f',
-  '82489f',
-  '8248af',
-  '824887',
-  '824897',
-  '8248a7',
-  '8248b7'
-].map(q => `${q}fffffffff`);
-
 function createH3TileLayer() {
   return new H3TileLayer({
-    data: 'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    data: 'data/{i}.json',
     minZoom: 0,
     maxZoom: 19,
     tileSize: 256,
     extent: [-112.5, 21.943045533438177, -90, 40.97989806962013],
     renderSubLayers: props => {
+      const {data} = props;
       const {index} = props.tile;
-      if (!h3Available.includes(index)) return null;
+      if (!data || !data.length) return null;
 
       return [
         new H3HexagonLayer(props, {
-          data: `data/${index}.json`,
           centerHexagon: index,
           highPrecision: true,
 

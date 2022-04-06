@@ -1,5 +1,5 @@
 import H3Tile2DHeader from './h3-tile-2d-header';
-import {getTileIndices, tileToBoundingBox} from './utils';
+import {tileToBoundingBox} from './utils';
 import {getHexagonsInBoundingBox} from './h3-utils';
 import {RequestScheduler} from '@loaders.gl/loader-utils';
 import {Matrix4} from '@math.gl/core';
@@ -155,12 +155,6 @@ export default class Tileset2D {
         modelMatrixInverse: this._modelMatrixInverse
       });
 
-      // START
-      const [east, south, west, north] = viewport.getBounds();
-      const resolution = Math.max(0, Math.floor((2 * viewport.zoom) / 3) - 2);
-      this.h3Indices = getHexagonsInBoundingBox({east, south, west, north}, resolution);
-      // END
-
       this._selectedTiles = tileIndices.map(index => this._getTile(index, true));
 
       if (this._dirty) {
@@ -192,20 +186,13 @@ export default class Tileset2D {
 
   /* Public interface for subclassing */
 
-  // Returns array of {x, y, z}
+  // Returns array of {index}
   getTileIndices({viewport, maxZoom, minZoom, zRange, modelMatrix, modelMatrixInverse}) {
     const {tileSize, extent, zoomOffset} = this.opts;
-    return getTileIndices({
-      viewport,
-      maxZoom,
-      minZoom,
-      zRange,
-      tileSize,
-      extent,
-      modelMatrix,
-      modelMatrixInverse,
-      zoomOffset
-    });
+    const [east, south, west, north] = viewport.getBounds();
+    const resolution = Math.max(0, Math.floor((2 * viewport.zoom) / 3) - 2);
+    const h3Indices = getHexagonsInBoundingBox({east, south, west, north}, resolution);
+    return h3Indices.map(index => ({index}));
   }
 
   // Add custom metadata to tiles
@@ -341,13 +328,13 @@ export default class Tileset2D {
   }
   /* eslint-enable complexity */
 
-  _getTile({x, y, z}, create) {
-    const tileId = `${x},${y},${z}`;
+  _getTile({index}, create) {
+    const tileId = index;
     let tile = this._cache.get(tileId);
     let needsReload = false;
 
     if (!tile && create) {
-      tile = new H3Tile2DHeader({x, y, z});
+      tile = new H3Tile2DHeader({index});
       Object.assign(tile, this.getTileMetadata(tile));
       needsReload = true;
       this._cache.set(tileId, tile);

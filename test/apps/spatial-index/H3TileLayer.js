@@ -2,6 +2,17 @@ import {_flatten as flatten} from '@deck.gl/core';
 import {H3HexagonLayer, TileLayer} from '@deck.gl/geo-layers';
 import H3Tileset2D from './h3-tileset-2d';
 
+const h3Available = [
+  '8148bf',
+  '82488f',
+  '82489f',
+  '8248af',
+  '824887',
+  '824897',
+  '8248a7',
+  '8248b7'
+].map(q => `${q}fffffffff`);
+
 const defaultProps = {};
 
 export default class H3TileLayer extends TileLayer {
@@ -16,22 +27,31 @@ export default class H3TileLayer extends TileLayer {
     super.updateState({props, changeFlags});
   }
 
+  getTileData(tile) {
+    const {data, fetch} = this.props;
+    const {index, signal} = tile;
+    tile.url = data.replace(/\{i\}/g, index);
+
+    // HACK skip tiles without data
+    if (!h3Available.includes(index)) return [];
+
+    if (tile.url) {
+      return fetch(tile.url, {propName: 'data', layer: this, signal});
+    }
+    return null;
+  }
+
   renderLayers() {
-    return this.state.tileset.h3Indices.map(h3Index => {
-      const tile = {
-        index: h3Index,
-        // Hack to keep layer happy
-        isVisible: true
-      };
+    return this.state.tileset.tiles.map(tile => {
       const outline = new H3HexagonLayer({
         ...this.props,
-        id: `${this.id}-${h3Index}-outline`,
+        id: `${this.id}-${tile.index}-outline`,
         tile,
 
-        data: [h3Index],
+        data: [tile.index],
         getHexagon: d => d,
         highPrecision: true,
-        centerHexagon: h3Index,
+        centerHexagon: tile.index,
 
         // Style
         extruded: false,
@@ -42,7 +62,8 @@ export default class H3TileLayer extends TileLayer {
       });
       const viz = this.renderSubLayers({
         ...this.props,
-        id: `${this.id}-${h3Index}`,
+        id: `${this.id}-${tile.index}`,
+        data: tile.content,
         tile
       });
 

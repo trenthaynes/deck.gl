@@ -2,10 +2,8 @@
 import {log} from '@deck.gl/core';
 
 export default class H3Tile2DHeader {
-  constructor({x, y, z}) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
+  constructor({index}) {
+    this.index = index;
     this.isVisible = false;
     this.isSelected = false;
     this.parent = null;
@@ -45,7 +43,7 @@ export default class H3Tile2DHeader {
 
   /* eslint-disable max-statements */
   async _loadData({getData, requestScheduler, onLoad, onError}) {
-    const {x, y, z, bbox} = this;
+    const {index, bbox} = this;
     const loaderId = this._loaderId;
 
     this._abortController = new AbortController(); // eslint-disable-line no-undef
@@ -68,7 +66,7 @@ export default class H3Tile2DHeader {
     let tileData = null;
     let error;
     try {
-      tileData = await getData({x, y, z, bbox, signal});
+      tileData = await getData({index, bbox, signal});
     } catch (err) {
       error = err || true;
     } finally {
