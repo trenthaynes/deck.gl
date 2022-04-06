@@ -157,7 +157,8 @@ export default class Tileset2D {
 
       // START
       const [east, south, west, north] = viewport.getBounds();
-      this.h3Indices = getHexagonsInBoundingBox({east, south, west, north}, 0);
+      const resolution = Math.max(0, Math.floor((2 * viewport.zoom) / 3) - 2);
+      this.h3Indices = getHexagonsInBoundingBox({east, south, west, north}, resolution);
       // END
 
       this._selectedTiles = tileIndices.map(index => this._getTile(index, true));

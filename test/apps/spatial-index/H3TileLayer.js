@@ -32,8 +32,11 @@ export default class H3TileLayer extends TileLayer {
         centerHexagon: h3Index,
 
         // Style
+        extruded: false,
         filled: false,
-        wireframe: true
+        stroked: true,
+        getLineWidth: 1,
+        lineWidthUnits: 'pixels'
       });
 
       return layer;
