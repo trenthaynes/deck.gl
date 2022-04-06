@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 import {render} from 'react-dom';
 import DeckGL from '@deck.gl/react';
 import {GeoJsonLayer} from '@deck.gl/layers';
-import {QuadkeyLayer, TileLayer} from '@deck.gl/geo-layers';
+import QuadkeyTileLayer from './QuadkeyTileLayer';
 
 const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5, pitch: 30, bearing: 330};
 const COUNTRIES =
@@ -16,7 +16,7 @@ function Root() {
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={[createBasemap(), createSpatialTileLayer()]}
+        layers={[createBasemap(), createQuadkeyTileLayer()]}
       />
     </>
   );
@@ -36,38 +36,7 @@ function createBasemap() {
   });
 }
 
-const defaultProps = {
-  renderSubLayers: {type: 'function', value: props => new QuadkeyLayer(props), compare: false}
-};
-class QuadkeyTileLayer extends TileLayer {
-  tileToQuadkey(tile) {
-    let index = '';
-    for (let z = tile.z; z > 0; z--) {
-      let b = 0;
-      const mask = 1 << (z - 1);
-      if ((tile.x & mask) !== 0) b++;
-      if ((tile.y & mask) !== 0) b += 2;
-      index += b.toString();
-    }
-    return index;
-  }
-
-  getTileData(tile) {
-    const {data, fetch} = this.props;
-    const {signal} = tile;
-    const quadkey = this.tileToQuadkey(tile);
-    tile.url = data.replace(/\{i\}/g, quadkey);
-
-    if (tile.url) {
-      return fetch(tile.url, {propName: 'data', layer: this, signal});
-    }
-    return null;
-  }
-}
-QuadkeyTileLayer.layerName = 'QuadkeyTileLayer';
-QuadkeyTileLayer.defaultProps = defaultProps;
-
-function createSpatialTileLayer() {
+function createQuadkeyTileLayer() {
   return new QuadkeyTileLayer({
     // Restrict so we only load tiles that we have
     data: 'data/{i}.json',
