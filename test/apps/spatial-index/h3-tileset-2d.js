@@ -154,6 +154,12 @@ export default class Tileset2D {
         modelMatrix: this._modelMatrix,
         modelMatrixInverse: this._modelMatrixInverse
       });
+
+      // START
+      const [east, south, west, north] = viewport.getBounds();
+      this.h3Indices = getHexagonsInBoundingBox({east, south, west, north}, 0);
+      // END
+
       this._selectedTiles = tileIndices.map(index => this._getTile(index, true));
 
       if (this._dirty) {
