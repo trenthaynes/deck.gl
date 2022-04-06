@@ -18,13 +18,15 @@ export default class H3TileLayer extends TileLayer {
 
   renderLayers() {
     return this.state.tileset.h3Indices.map(h3Index => {
-      const layer = new H3HexagonLayer({
-        ...this.props,
-        id: `${this.id}-${h3Index}`,
+      const tile = {
+        index: h3Index,
         // Hack to keep layer happy
-        tile: {
-          isVisible: true
-        },
+        isVisible: true
+      };
+      const outline = new H3HexagonLayer({
+        ...this.props,
+        id: `${this.id}-${h3Index}-outline`,
+        tile,
 
         data: [h3Index],
         getHexagon: d => d,
@@ -38,8 +40,13 @@ export default class H3TileLayer extends TileLayer {
         getLineWidth: 1,
         lineWidthUnits: 'pixels'
       });
+      const viz = this.renderSubLayers({
+        ...this.props,
+        id: `${this.id}-${h3Index}`,
+        tile
+      });
 
-      return layer;
+      return flatten([outline, viz], Boolean);
     });
   }
 }

@@ -4,10 +4,11 @@ import React, {useState} from 'react';
 import {render} from 'react-dom';
 import DeckGL from '@deck.gl/react';
 import {BitmapLayer, GeoJsonLayer, PathLayer} from '@deck.gl/layers';
+import {H3HexagonLayer} from '@deck.gl/geo-layers';
 import H3TileLayer from './H3TileLayer';
 import QuadkeyTileLayer from './QuadkeyTileLayer';
 
-const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5, pitch: 30, bearing: 330};
+const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5.8, pitch: 30, bearing: 130};
 const COUNTRIES =
   'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_scale_rank.geojson';
 
@@ -17,7 +18,7 @@ function Root() {
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={[createBasemap(), createQuadkeyTileLayer(), createH3TileLayer()]}
+        layers={[createBasemap(), /*createQuadkeyTileLayer(),*/ createH3TileLayer()]}
       />
     </>
   );
@@ -45,14 +46,23 @@ function createQuadkeyTileLayer() {
     maxZoom: 5,
     extent: [-112.5, 21.943045533438177, -90, 40.97989806962013],
     getQuadkey: d => d.spatial_index,
-
-    // Styling
     getFillColor: d => [(d.value - 12) * 25, d.value * 8, 79],
     getElevation: d => d.value - 12,
     extruded: true,
     elevationScale: 50000
   });
 }
+
+const h3Available = [
+  '8148bf',
+  '82488f',
+  '82489f',
+  '8248af',
+  '824887',
+  '824897',
+  '8248a7',
+  '8248b7'
+].map(q => `${q}fffffffff`);
 
 function createH3TileLayer() {
   return new H3TileLayer({
@@ -62,25 +72,21 @@ function createH3TileLayer() {
     tileSize: 256,
     extent: [-112.5, 21.943045533438177, -90, 40.97989806962013],
     renderSubLayers: props => {
-      const {
-        bbox: {west, south, east, north}
-      } = props.tile;
+      const {index} = props.tile;
+      if (!h3Available.includes(index)) return null;
 
       return [
-        new PathLayer(props, {
-          data: [0],
-          pickable: true,
-          widthScale: 20,
-          widthMinPixels: 2,
-          getPath: d => [
-            [east, north],
-            [east, south],
-            [west, south],
-            [west, north],
-            [east, north]
-          ],
-          getColor: [255, 0, 0],
-          getWidth: d => 5
+        new H3HexagonLayer(props, {
+          data: `data/${index}.json`,
+          centerHexagon: index,
+          highPrecision: true,
+
+          // Temp: 15-24
+          getHexagon: d => d.spatial_index,
+          getFillColor: d => [(d.temp - 14) * 28, 90 - d.temp * 3, (25 - d.temp) * 16],
+          getElevation: d => d.temp - 14,
+          extruded: true,
+          elevationScale: 50000
         })
       ];
     }
