@@ -319,7 +319,7 @@ export default class Tileset2D {
     if (this._dirty) {
       this._tiles = Array.from(this._cache.values())
         // sort by zoom level so that smaller tiles are displayed on top
-        .sort((t1, t2) => t1.z - t2.z);
+        .sort((t1, t2) => h3GetResolution(t1.index) - h3GetResolution(t2.index));
 
       this._dirty = false;
     }
