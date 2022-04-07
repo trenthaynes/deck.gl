@@ -2,15 +2,14 @@
 /* eslint-disable no-console */
 import React, {useState} from 'react';
 import {render} from 'react-dom';
+import {StaticMap} from 'react-map-gl';
+import {BASEMAP} from '@deck.gl/carto';
 import DeckGL from '@deck.gl/react';
-import {BitmapLayer, GeoJsonLayer, PathLayer} from '@deck.gl/layers';
 import {H3HexagonLayer} from '@deck.gl/geo-layers';
 import H3TileLayer from './H3TileLayer';
 import QuadkeyTileLayer from './QuadkeyTileLayer';
 
 const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5.8, pitch: 30, bearing: 130};
-const COUNTRIES =
-  'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_scale_rank.geojson';
 
 function Root() {
   return (
@@ -18,24 +17,12 @@ function Root() {
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={[createBasemap(), /*createQuadkeyTileLayer(),*/ createH3TileLayer()]}
-      />
+        layers={[/*createQuadkeyTileLayer(),*/ createH3TileLayer()]}
+      >
+        <StaticMap mapStyle={BASEMAP.VOYAGER_NOLABELS} />
+      </DeckGL>
     </>
   );
-}
-
-function createBasemap() {
-  return new GeoJsonLayer({
-    id: 'base-map',
-    data: COUNTRIES,
-    // Styles
-    stroked: true,
-    filled: true,
-    lineWidthMinPixels: 2,
-    opacity: 0.4,
-    getLineColor: [60, 60, 60],
-    getFillColor: [200, 200, 200]
-  });
 }
 
 function createQuadkeyTileLayer() {
