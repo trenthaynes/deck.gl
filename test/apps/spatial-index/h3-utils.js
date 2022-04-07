@@ -1,4 +1,4 @@
-import {polyfill, getRes0Indexes, h3GetFaces, geoToH3} from 'h3-js';
+import {polyfill, getRes0Indexes, h3GetFaces, h3ToParent, geoToH3} from 'h3-js';
 
 // Number of hexagons at resolution 10 in tile x:497 y:505 z:10
 // This tile is close to the equator and includes a pentagon 8a7400000007fff
@@ -22,7 +22,10 @@ export function getHexagonsInBoundingBox({west, north, east, south}, resolution)
     );
   }
 
-  return polyfill(
+  // `polyfill()` fills based on hexagon center, which means tiles vanish
+  // prematurely. Get more accurate coverage by oversampling
+  const oversample = 1;
+  const h3Indices = polyfill(
     [
       [
         [west, north],
@@ -32,9 +35,11 @@ export function getHexagonsInBoundingBox({west, north, east, south}, resolution)
         [west, north]
       ]
     ],
-    resolution,
+    resolution + oversample,
     true
   );
+
+  return [...new Set(h3Indices.map(i => h3ToParent(i, resolution)))];
 }
 
 export function getTileInfo(tile, resolution) {
