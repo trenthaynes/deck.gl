@@ -1,3 +1,4 @@
+import {h3GetResolution, h3ToParent} from 'h3-js';
 import H3Tile2DHeader from './h3-tile-2d-header';
 import {tileToBoundingBox} from './utils';
 import {getHexagonsInBoundingBox} from './h3-utils';
@@ -163,9 +164,7 @@ export default class Tileset2D {
       }
       // Check for needed reloads explicitly even if the view/matrix has not changed.
     } else if (this.needsReload) {
-      this._selectedTiles = this._selectedTiles.map(tile =>
-        this._getTile({x: tile.x, y: tile.y, z: tile.z})
-      );
+      this._selectedTiles = this._selectedTiles.map(tile => this._getTile({index: tile.index}));
     }
 
     // Update tile states
@@ -201,13 +200,12 @@ export default class Tileset2D {
     return {bbox: tileToBoundingBox(this._viewport, x, y, z, tileSize)};
   }
 
-  // Returns {x, y, z} of the parent tile
-  getParentIndex(tileIndex) {
+  // Returns {index} of the parent tile
+  getParentIndex(tile) {
     // Perf: mutate the input object to avoid GC
-    tileIndex.x = Math.floor(tileIndex.x / 2);
-    tileIndex.y = Math.floor(tileIndex.y / 2);
-    tileIndex.z -= 1;
-    return tileIndex;
+    const resolution = h3GetResolution(tile.index);
+    tile.index = h3ToParent(tile.index, resolution - 1);
+    return tile;
   }
 
   // Returns true if any tile's visibility changed
@@ -281,7 +279,7 @@ export default class Tileset2D {
 
     // Rebuild tree
     for (const tile of _cache.values()) {
-      const parent = this._getNearestAncestor(tile.x, tile.y, tile.z);
+      const parent = this._getNearestAncestor(tile.index);
       tile.parent = parent;
       if (parent) {
         parent.children.push(tile);
@@ -354,13 +352,15 @@ export default class Tileset2D {
     return tile;
   }
 
-  _getNearestAncestor(x, y, z) {
+  _getNearestAncestor(index) {
     const {_minZoom = 0} = this;
-    let index = {x, y, z};
+    let tile = {index};
+    let resolution = h3GetResolution(tile.index);
 
-    while (index.z > _minZoom) {
-      index = this.getParentIndex(index);
-      const parent = this._getTile(index);
+    while (resolution > _minZoom) {
+      tile = this.getParentIndex(tile);
+      resolution = h3GetResolution(tile.index);
+      const parent = this._getTile(tile);
       if (parent) {
         return parent;
       }
