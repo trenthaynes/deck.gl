@@ -1,6 +1,7 @@
 import {_flatten as flatten} from '@deck.gl/core';
 import {H3HexagonLayer, TileLayer} from '@deck.gl/geo-layers';
 import H3Tileset2D from './h3-tileset-2d';
+import BBoxTileLayer from './BBoxTileLayer';
 
 const h3Available = [
   '8148bf',
@@ -66,6 +67,8 @@ export default class H3TileLayer extends TileLayer {
         data: tile.content,
         tile
       });
+
+      // const bbox = BBoxTileLayer(tile);
 
       return flatten([outline, viz], Boolean);
     });

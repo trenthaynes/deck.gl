@@ -1,7 +1,6 @@
 import {h3GetResolution, h3ToParent} from 'h3-js';
 import H3Tile2DHeader from './h3-tile-2d-header';
-import {tileToBoundingBox} from './utils';
-import {getHexagonsInBoundingBox} from './h3-utils';
+import {getHexagonsInBoundingBox, tileToBoundingBox} from './h3-utils';
 import {RequestScheduler} from '@loaders.gl/loader-utils';
 import {Matrix4} from '@math.gl/core';
 
@@ -195,9 +194,8 @@ export default class Tileset2D {
   }
 
   // Add custom metadata to tiles
-  getTileMetadata({x, y, z}) {
-    const {tileSize} = this.opts;
-    return {bbox: tileToBoundingBox(this._viewport, x, y, z, tileSize)};
+  getTileMetadata({index}) {
+    return {bbox: tileToBoundingBox(index)};
   }
 
   // Returns {index} of the parent tile

@@ -1,4 +1,4 @@
-import {polyfill, getRes0Indexes, h3GetFaces, h3ToParent, geoToH3} from 'h3-js';
+import {polyfill, getRes0Indexes, h3ToGeoBoundary, h3ToParent} from 'h3-js';
 
 // Number of hexagons at resolution 10 in tile x:497 y:505 z:10
 // This tile is close to the equator and includes a pentagon 8a7400000007fff
@@ -42,32 +42,13 @@ export function getHexagonsInBoundingBox({west, north, east, south}, resolution)
   return oversample ? [...new Set(h3Indices.map(i => h3ToParent(i, resolution)))] : h3Indices;
 }
 
-export function getTileInfo(tile, resolution) {
-  if (!tile.centerHexagon) {
-    const {west, north, east, south} = tile.bbox;
-    const faces = [];
-
-    const NW = geoToH3(north, west, resolution);
-    faces.push(...h3GetFaces(NW));
-
-    const NE = geoToH3(north, east, resolution);
-    faces.push(...h3GetFaces(NE));
-
-    const SW = geoToH3(south, west, resolution);
-    faces.push(...h3GetFaces(SW));
-
-    const SE = geoToH3(south, east, resolution);
-    faces.push(...h3GetFaces(SE));
-
-    tile.hasMultipleFaces = new Set(faces).size > 1;
-    tile.centerHexagon = geoToH3((north + south) / 2, (west + east) / 2, resolution);
-  }
-
-  return tile;
-}
-
-export function getMinZoom(resolution, maxHexCount) {
-  const hexCountZoom10 = HEX_COUNT_ZOOM_10_RES_10 * Math.pow(RES_FACTOR, resolution - 10);
-  const maxHexCountZoom = 10 + Math.log2(maxHexCount / hexCountZoom10) / Math.log2(ZOOM_FACTOR);
-  return Math.max(0, Math.floor(maxHexCountZoom));
+export function tileToBoundingBox(index) {
+  const coordinates = h3ToGeoBoundary(index);
+  const latitudes = coordinates.map(c => c[0]);
+  const longitudes = coordinates.map(c => c[1]);
+  const west = Math.min(...longitudes);
+  const south = Math.min(...latitudes);
+  const east = Math.max(...longitudes);
+  const north = Math.max(...latitudes);
+  return {west, south, east, north};
 }
