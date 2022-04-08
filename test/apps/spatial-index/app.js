@@ -11,7 +11,7 @@ import H3TileLayer from './H3TileLayer';
 import QuadkeyTileLayer from './QuadkeyTileLayer';
 import Checkbox from './Checkbox';
 
-const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5.8, pitch: 30, bearing: 130};
+const INITIAL_VIEW_STATE = {longitude: -100, latitude: 30.8039, zoom: 5.2, pitch: 30, bearing: 130};
 
 const transitions = {getElevation: {type: 'spring', stiffness: 0.005, damping: 0.075}};
 
@@ -41,6 +41,7 @@ function createQuadkeyTileLayer(props) {
     data: 'data/{i}.json',
     minZoom: 4,
     maxZoom: 5,
+    tileSize: 1024,
     extent: [-112.5, 21.943045533438177, -90, 40.97989806962013],
     elevationScale: 50000,
 
