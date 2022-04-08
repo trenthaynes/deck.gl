@@ -39,7 +39,7 @@ export function getHexagonsInBoundingBox({west, north, east, south}, resolution)
     true
   );
 
-  return [...new Set(h3Indices.map(i => h3ToParent(i, resolution)))];
+  return oversample ? [...new Set(h3Indices.map(i => h3ToParent(i, resolution)))] : h3Indices;
 }
 
 export function getTileInfo(tile, resolution) {
