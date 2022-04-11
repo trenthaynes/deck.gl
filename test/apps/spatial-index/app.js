@@ -37,20 +37,22 @@ function Root() {
 function createQuadkeyTileLayer(props) {
   const {extruded, transitions} = props;
   return new QuadkeyTileLayer({
-    // Restrict so we only load tiles that we have
-    data: 'data/{i}.json',
-    minZoom: 4,
-    maxZoom: 5,
+    data: 'https://gcp-us-east1-09.dev.api.carto.com/v3/maps/connection/table/{i}?name=whatever&formatTiles=json',
+    minZoom: 1,
+    maxZoom: 10,
     tileSize: 1024,
-    extent: [-112.5, 21.943045533438177, -90, 40.97989806962013],
     elevationScale: 50000,
 
     renderSubLayers: props => {
       return new QuadkeyLayer(props, {
         extruded: true,
-        getQuadkey: d => d.spatial_index,
-        getFillColor: d => [(d.value - 12) * 25, d.value * 8, 79],
-        getElevation: d => (extruded ? d.value - 12 : 0),
+        getQuadkey: d => d.properties.quadkey,
+        getFillColor: d => [
+          Math.pow(d.properties.aggregationValue, 0.1) * 255,
+          d.properties.aggregationValue * 80,
+          79
+        ],
+        getElevation: d => (extruded ? d.properties.aggregationValue : 0),
         transitions,
         updateTriggers: {
           getElevation: [extruded]
