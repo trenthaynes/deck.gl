@@ -45,6 +45,7 @@ function createQuadkeyTileLayer(props) {
 
     renderSubLayers: props => {
       return new QuadkeyLayer(props, {
+        _offset: props.tile.z,
         extruded: true,
         getQuadkey: d => d.properties.quadkey,
         getFillColor: d => [
