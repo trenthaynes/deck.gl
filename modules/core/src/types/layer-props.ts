@@ -1,7 +1,7 @@
 import type {CoordinateSystem} from '../lib/constants';
 import type Layer from '../lib/layer';
 
-import type {NumericArray} from './types';
+import type {ConstructorOf, NumericArray} from './types';
 import type {PickingInfo} from '../lib/picking/pick-info';
 import type {MjolnirEvent} from 'mjolnir.js';
 
@@ -239,7 +239,7 @@ export type LayerProps<DataType = any> = {
 export type CompositeLayerProps<DataType = any> = LayerProps<DataType> & {
   _subLayerProps: {
     [subLayerId: string]: {
-      type?: typeof Layer;
+      type?: ConstructorOf<Layer>;
       [propName: string]: any;
     };
   };

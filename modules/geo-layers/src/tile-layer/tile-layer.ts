@@ -306,7 +306,7 @@ export default class TileLayer<
       _offset: number;
       tile: Tile2DHeader;
     }
-  ): LayersList {
+  ): Layer | null | LayersList {
     return this.props.renderSubLayers(props);
   }
 

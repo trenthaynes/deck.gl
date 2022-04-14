@@ -214,7 +214,7 @@ export default class MVTLayer<
       _offset: number;
       tile: Tile2DHeader;
     }
-  ): LayersList {
+  ): Layer | null | LayersList {
     const {x, y, z} = props.tile.index;
     const worldScale = Math.pow(2, z);
 

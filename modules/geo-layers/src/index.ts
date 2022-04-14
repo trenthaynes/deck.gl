@@ -36,3 +36,5 @@ export {default as _Tileset2D} from './tile-layer/tileset-2d';
 // Types
 
 export type {TileLayerProps} from './tile-layer/tile-layer';
+export type {TileLoadProps as _TileLoadProps} from './tile-layer/types';
+export type {MVTLayerProps} from './mvt-layer/mvt-layer';

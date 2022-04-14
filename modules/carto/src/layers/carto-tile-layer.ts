@@ -1,29 +1,37 @@
 /* global TextDecoder */
 import Protobuf from 'pbf';
-import {log} from '@deck.gl/core';
+import {Layer, LayersList, log} from '@deck.gl/core';
 import {ClipExtension} from '@deck.gl/extensions';
-import {MVTLayer, _getURLFromTemplate} from '@deck.gl/geo-layers';
+import {
+  MVTLayer,
+  MVTLayerProps,
+  _getURLFromTemplate,
+  _TileLoadProps as TileLoadProps
+} from '@deck.gl/geo-layers';
 import {GeoJsonLayer} from '@deck.gl/layers';
 import {geojsonToBinary} from '@loaders.gl/gis';
-import {Tile} from './schema/carto-tile';
-import {TILE_FORMATS} from '../api/maps-api-common';
+import {Properties, Tile, TileReader} from './schema/carto-tile';
+import {TileFormat, TILE_FORMATS} from '../api/maps-api-common';
+import {LoaderOptions, LoaderWithParser} from '@loaders.gl/loader-utils';
+import type {BinaryFeatures} from '@loaders.gl/schema';
+import type {Feature} from 'geojson';
 
-function parseJSON(arrayBuffer) {
+function parseJSON(arrayBuffer: ArrayBuffer): any {
   return JSON.parse(new TextDecoder().decode(arrayBuffer));
 }
 
-function parsePbf(buffer) {
+function parsePbf(buffer: ArrayBuffer): Tile {
   const pbf = new Protobuf(buffer);
-  const tile = Tile.read(pbf);
+  const tile = TileReader.read(pbf);
   return tile;
 }
 
-function unpackProperties(properties) {
+function unpackProperties(properties: Properties[]) {
   if (!properties || !properties.length) {
     return [];
   }
   return properties.map(item => {
-    const currentRecord = {};
+    const currentRecord: Record<string, unknown> = {};
     item.data.forEach(({key, value}) => {
       currentRecord[key] = value;
     });
@@ -31,7 +39,7 @@ function unpackProperties(properties) {
   });
 }
 
-function parseCartoTile(arrayBuffer, options) {
+function parseCartoTile(arrayBuffer: ArrayBuffer, options?: LoaderOptions): BinaryFeatures | null {
   if (!arrayBuffer) return null;
   const formatTiles = options && options.cartoTile && options.cartoTile.formatTiles;
   if (formatTiles === TILE_FORMATS.GEOJSON) return geojsonToBinary(parseJSON(arrayBuffer).features);
@@ -45,13 +53,15 @@ function parseCartoTile(arrayBuffer, options) {
     polygons: {...polygons, properties: unpackProperties(polygons.properties)}
   };
 
-  return data;
+  // Note: there is slight, difference in `numericProps` type, however geojson/mvtlayer can cope with this
+  return data as unknown as BinaryFeatures;
 }
 
 const defaultTileFormat = TILE_FORMATS.BINARY;
 
-const CartoTileLoader = {
+const CartoTileLoader: LoaderWithParser = {
   name: 'CARTO Tile',
+  version: '1',
   id: 'cartoTile',
   module: 'carto',
   extensions: ['pbf'],
@@ -73,9 +83,19 @@ const defaultProps = {
   loaders: [CartoTileLoader]
 };
 
-export default class CartoTileLayer extends MVTLayer {
-  getTileData(tile) {
-    const url = _getURLFromTemplate(this.state.data, tile);
+export type CartoTileLayerProps<DataT extends Feature = Feature> = MVTLayerProps<DataT> & {
+  formatTiles: TileFormat;
+};
+
+export default class CartoTileLayer<DataT extends Feature = Feature> extends MVTLayer<
+  DataT,
+  CartoTileLayerProps<DataT>
+> {
+  static layerName = 'CartoTileLayer';
+  static defaultProps = defaultProps;
+
+  getTileData(tile: TileLoadProps) {
+    const url = _getURLFromTemplate(this.state!.data, tile);
     if (!url) {
       return Promise.reject('Invalid URL');
     }
@@ -100,16 +120,15 @@ export default class CartoTileLayer extends MVTLayer {
     return fetch(url, {propName: 'data', layer: this, loadOptions, signal});
   }
 
-  renderSubLayers(props) {
+  renderSubLayers(props): Layer | null | LayersList {
     if (props.data === null) {
       return null;
     }
 
-    props.autoHighlight = false;
-
     const {
       bbox: {west, south, east, north}
     } = props.tile;
+    props.autoHighlight = false;
     props.extensions = [new ClipExtension(), ...(props.extensions || [])];
     props.clipBounds = [west, south, east, north];
 
@@ -119,6 +138,3 @@ export default class CartoTileLayer extends MVTLayer {
     return subLayer;
   }
 }
-
-CartoTileLayer.layerName = 'CartoTileLayer';
-CartoTileLayer.defaultProps = defaultProps;
