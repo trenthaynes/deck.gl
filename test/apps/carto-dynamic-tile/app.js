@@ -5,6 +5,8 @@ import {render} from 'react-dom';
 import DeckGL from '@deck.gl/react';
 import {CartoLayer, FORMATS, TILE_FORMATS, MAP_TYPES} from '@deck.gl/carto';
 import {GeoJsonLayer} from '@deck.gl/layers';
+import tableConfig from './tableConfig';
+import queryConfig from './queryConfig';
 
 const INITIAL_VIEW_STATE = {longitude: -73.95643, latitude: 40.8039, zoom: 12};
 const COUNTRIES =
@@ -17,56 +19,21 @@ const apiBaseUrl = 'https://direct-gcp-us-east1.api.carto.com';
 // Localhost
 // const apiBaseUrl = 'http://localhost:8002'
 
-const config = {
-  bigquery: {
-    points_1M: 'cartodb-gcp-backend-data-team.dynamic_tiling.points_1M',
-    points_5M: 'cartodb-gcp-backend-data-team.dynamic_tiling.points_5M',
-    censustract: 'carto-do-public-data.carto.geography_usa_censustract_2019',
-    blockgroup: 'carto-do-public-data.carto.geography_usa_blockgroup_2019',
-    zipcodes: 'carto-do-public-data.carto.geography_usa_zcta5_2019',
-    h3: 'carto-do-public-data.carto.geography_usa_h3res8_v1',
-    block: 'carto-do-public-data.carto.geography_usa_block_2019'
-  },
-  snowflake: {
-    points_1M: 'carto_backend_data_team.dynamic_tiling.points_1M',
-    points_5M: 'carto_backend_data_team.dynamic_tiling.points_5M',
-    censustract: 'carto_backend_data_team.dynamic_tiling.usa_censustract_2019',
-    blockgroup: 'carto_backend_data_team.dynamic_tiling.usa_blockgroup_2019',
-    zipcodes: 'carto_backend_data_team.dynamic_tiling.usa_zcta5_2019',
-    h3: 'carto_backend_data_team.dynamic_tiling.usa_h3res8_v1',
-    block: 'carto_backend_data_team.dynamic_tiling.usa_block_2019'
-  },
-  redshift: {
-    points_1M: 'carto_backend_data_team.dynamic_tiling.points_1m',
-    points_5M: 'carto_backend_data_team.dynamic_tiling.points_5m',
-    censustract: 'carto_backend_data_team.dynamic_tiling.usa_censustract_2019',
-    blockgroup: 'carto_backend_data_team.dynamic_tiling.usa_blockgroup_2019',
-    zipcodes: 'carto_backend_data_team.dynamic_tiling.usa_zcta5_2019',
-    h3: 'carto_backend_data_team.dynamic_tiling.usa_h3res8_v1',
-    block: 'carto_backend_data_team.dynamic_tiling.usa_block_2019'
-  },
-  postgres: {
-    points_1M: 'demo.demo_tables.points_1m',
-    points_5M: 'demo.demo_tables.points_5m',
-    points_10M: 'demo.demo_tables.points_10m',
-    censustract: 'demo.demo_tables.usa_censustract_2019',
-    blockgroup: 'demo.demo_tables.usa_blockgroup_2019',
-    zipcodes: 'demo.demo_tables.usa_zcta5_2019',
-    county: 'demo.demo_tables.usa_county_2019',
-    block: 'demo.demo_tables.usa_block_2019'
-  }
-};
-
-const accessToken = 'XXXX';
+const accessToken = 'XXX';
 
 const showBasemap = true;
 const showCarto = true;
 
 function Root() {
   const [connection, setConnection] = useState('bigquery');
-  const [dataset, setDataset] = useState('points_1M');
+  const [table, setTable] = useState('points_1M');
+  const [query, setQuery] = useState('censustract');
+
+  const [type, setType] = useState(MAP_TYPES.TABLE);
   const [formatTiles, setFormatTiles] = useState(TILE_FORMATS.BINARY);
-  const table = config[connection][dataset];
+  const config = type === MAP_TYPES.TABLE ? tableConfig : queryConfig;
+  const data = type === MAP_TYPES.TABLE ? config[connection][table] : config[connection][query];
+
   return (
     <>
       <DeckGL
@@ -74,8 +41,14 @@ function Root() {
         controller={true}
         layers={[
           showBasemap && createBasemap(),
-          showCarto && createCarto(connection, formatTiles, table)
+          showCarto && createCarto({connection, type, data, formatTiles})
         ]}
+      />
+      <ObjectSelect
+        title="type"
+        obj={[MAP_TYPES.TABLE, MAP_TYPES.QUERY]}
+        value={type}
+        onSelect={setType}
       />
       <ObjectSelect
         title="formatTiles"
@@ -89,12 +62,22 @@ function Root() {
         value={connection}
         onSelect={setConnection}
       />
-      <ObjectSelect
-        title="dataset"
-        obj={Object.keys(config[connection])}
-        value={dataset}
-        onSelect={setDataset}
-      />
+      {type === MAP_TYPES.TABLE && (
+        <ObjectSelect
+          title="table"
+          obj={Object.keys(tableConfig[connection])}
+          value={table}
+          onSelect={setTable}
+        />
+      )}
+      {type === MAP_TYPES.QUERY && (
+        <ObjectSelect
+          title="query"
+          obj={Object.keys(queryConfig[connection])}
+          value={query}
+          onSelect={setQuery}
+        />
+      )}
     </>
   );
 }
@@ -113,15 +96,14 @@ function createBasemap() {
   });
 }
 
-function createCarto(connection, formatTiles, table) {
+function createCarto({connection, type, data, formatTiles}) {
   return new CartoLayer({
     id: 'carto',
     connection,
-    data: table,
+    type,
+    data,
     credentials: {accessToken, apiBaseUrl},
 
-    // Dynamic tiling. Request TILEJSON format with TABLE
-    type: MAP_TYPES.TABLE,
     format: FORMATS.TILEJSON,
     formatTiles,
 
