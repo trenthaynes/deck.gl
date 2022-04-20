@@ -118,3 +118,4 @@ export type {
   Position,
   Color
 } from './types/layer-props';
+export type {PickingInfo} from './lib/picking/pick-info';
