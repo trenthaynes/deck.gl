@@ -4,7 +4,7 @@ export default function Querybox({label, value, onChange}) {
   return (
     <>
       <input
-        style={{position: 'relative', width: 300}}
+        style={{position: 'relative', width: 400}}
         ref={inputField}
         type="text"
         defaultValue={value}
