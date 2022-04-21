@@ -1,6 +1,6 @@
 /* global document */
 /* eslint-disable no-console */
-import React, {useState, useRef} from 'react';
+import React, {useState} from 'react';
 import {render} from 'react-dom';
 import {StaticMap} from 'react-map-gl';
 import {BASEMAP} from '@deck.gl/carto';
@@ -10,6 +10,7 @@ import {QuadkeyLayer} from '@deck.gl/geo-layers';
 import H3TileLayer from './H3TileLayer';
 import QuadkeyTileLayer from './QuadkeyTileLayer';
 import Checkbox from './Checkbox';
+import Querybox from './Querybox';
 
 const INITIAL_VIEW_STATE = {longitude: 7, latitude: 45.8039, zoom: 5.2, pitch: 30, bearing: 0};
 
@@ -19,7 +20,6 @@ function Root() {
   const [extruded, setExtruded] = useState(false);
   const [h3, setH3] = useState(false);
   const [aggregationExp, setAggregationExp] = useState('avg(population) as value');
-  const aggregationExpField = useRef();
   const props = {aggregationExp, extruded, transitions};
   return (
     <>
@@ -32,18 +32,7 @@ function Root() {
       </DeckGL>
       <Checkbox label="Extruded" value={extruded} onChange={() => setExtruded(!extruded)} />
       <Checkbox label="H3/Quadkey" value={h3} onChange={() => setH3(!h3)} />
-      <input
-        style={{position: 'relative', width: 400}}
-        ref={aggregationExpField}
-        type="text"
-        defaultValue={aggregationExp}
-      />
-      <button
-        style={{position: 'relative'}}
-        onClick={() => setAggregationExp(aggregationExpField.current.value)}
-      >
-        Execute
-      </button>
+      <Querybox label="Execute" value={aggregationExp} onChange={e => setAggregationExp(e)} />
     </>
   );
 }
