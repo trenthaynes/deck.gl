@@ -27,9 +27,9 @@ const showCarto = true;
 function Root() {
   const [connection, setConnection] = useState('bigquery');
   const [table, setTable] = useState('points_1M');
-  const [query, setQuery] = useState('censustract');
+  const [query, setQuery] = useState('points_1M');
 
-  const [type, setType] = useState(MAP_TYPES.TABLE);
+  const [type, setType] = useState(MAP_TYPES.QUERY);
   const [formatTiles, setFormatTiles] = useState(TILE_FORMATS.BINARY);
   const config = type === MAP_TYPES.TABLE ? tableConfig : queryConfig;
   const data = type === MAP_TYPES.TABLE ? config[connection][table] : config[connection][query];
