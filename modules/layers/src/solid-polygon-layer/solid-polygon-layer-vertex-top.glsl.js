@@ -21,14 +21,16 @@
 import main from './solid-polygon-layer-vertex-main.glsl';
 
 export default `\
+#version 300 es
+
 #define SHADER_NAME solid-polygon-layer-vertex-shader
 
-attribute vec3 positions;
-attribute vec3 positions64Low;
-attribute float elevations;
-attribute vec4 fillColors;
-attribute vec4 lineColors;
-attribute vec3 pickingColors;
+in vec3 positions;
+in vec3 positions64Low;
+in float elevations;
+in vec4 fillColors;
+in vec4 lineColors;
+in vec3 pickingColors;
 
 ${main}
 

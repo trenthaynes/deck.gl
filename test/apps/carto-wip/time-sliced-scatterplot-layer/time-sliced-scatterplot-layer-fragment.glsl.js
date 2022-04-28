@@ -19,21 +19,24 @@
 // THE SOFTWARE.
 
 export default `\
+#version 300 es
+
 #define SHADER_NAME time-sliced-scatterplot-layer-fragment-shader
 
 precision highp float;
 
-varying vec4 vColor;
-varying vec2 unitPosition;
-varying float innerUnitRadius;
+in vec4 vColor;
+in vec2 unitPosition;
+in float innerUnitRadius;
 
+out vec4 fragmentColor;
 void main(void) {
 
   float distToCenter = length(unitPosition);
 
   if (distToCenter <= 1.0 && distToCenter >= innerUnitRadius) {
-    gl_FragColor = picking_filterPickingColor(gl_FragColor);
-    gl_FragColor = vColor;
+    fragmentColor = picking_filterPickingColor(fragmentColor);
+    fragmentColor = vColor;
   } else {
     discard;
   }

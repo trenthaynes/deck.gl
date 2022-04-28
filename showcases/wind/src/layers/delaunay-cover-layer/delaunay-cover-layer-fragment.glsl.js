@@ -19,14 +19,17 @@
 // THE SOFTWARE.
 
 export default `\
+#version 300 es
+
 #define SHADER_NAME delaunay-cover-fragment-shader
 
-varying vec4 vPosition;
-varying vec4 vNormal;
-varying vec4 vColor;
+in vec4 vPosition;
+in vec4 vNormal;
+in vec4 vColor;
 
+out vec4 fragmentColor;
 void main(void) {
   float lightWeight = getLightWeight(vPosition.xyz, vNormal.xzy);
-  gl_FragColor = vec4(vColor.xyz * lightWeight, vColor.a);
+  fragmentColor = vec4(vColor.xyz * lightWeight, vColor.a);
 }
 `;

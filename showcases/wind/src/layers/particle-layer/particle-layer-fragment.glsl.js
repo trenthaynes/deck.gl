@@ -19,13 +19,16 @@
 // THE SOFTWARE.
 
 export default `\
+#version 300 es
+
 #define SHADER_NAME particle-layer-fragment-shader
 
 precision highp float;
 
-varying vec4 vColor;
-varying float vAltitude;
+in vec4 vColor;
+in float vAltitude;
 
+out vec4 fragmentColor;
 void main(void) {
   // if (vColor.a < 0.07) {
   // 	discard;
@@ -38,6 +41,6 @@ void main(void) {
   if (false && length(diff) > 0.5) {
     discard;
   }
-  gl_FragColor = vColor;
+  fragmentColor = vColor;
 }
 `;

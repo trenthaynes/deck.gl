@@ -19,15 +19,18 @@
 // THE SOFTWARE.
 
 export default `\
+#version 300 es
+
 #define SHADER_NAME solid-polygon-layer-fragment-shader
 
 precision highp float;
 
-varying vec4 vColor;
+in vec4 vColor;
 
+out vec4 fragmentColor;
 void main(void) {
-  gl_FragColor = vColor;
+  fragmentColor = vColor;
 
-  DECKGL_FILTER_COLOR(gl_FragColor, geometry);
+  DECKGL_FILTER_COLOR(fragmentColor, geometry);
 }
 `;

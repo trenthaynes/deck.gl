@@ -19,16 +19,17 @@
 // THE SOFTWARE.
 
 export default `\
+#version 300 es
 
-attribute vec2 vertexPositions;
-attribute float vertexValid;
+in vec2 vertexPositions;
+in float vertexValid;
 
 uniform bool extruded;
 uniform bool isWireframe;
 uniform float elevationScale;
 uniform float opacity;
 
-varying vec4 vColor;
+out vec4 vColor;
 
 struct PolygonProps {
   vec4 fillColors;

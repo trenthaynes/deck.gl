@@ -19,15 +19,17 @@
 // THE SOFTWARE.
 
 export default `\
+#version 300 es
+
 #define SHADER_NAME time-sliced-scatterplot-layer-vertex-shader
 
-attribute vec3 positions;
+in vec3 positions;
 
-attribute vec3 instancePositions;
-attribute float instanceRadius;
-attribute vec4 instanceColors;
-attribute vec3 instancePickingColors;
-attribute float time;
+in vec3 instancePositions;
+in float instanceRadius;
+in vec4 instanceColors;
+in vec3 instancePickingColors;
+in float time;
 
 uniform float currentTime;
 uniform float opacity;
@@ -38,9 +40,9 @@ uniform float outline;
 uniform float strokeWidth;
 uniform float fadeFactor;
 
-varying vec4 vColor;
-varying vec2 unitPosition;
-varying float innerUnitRadius;
+out vec4 vColor;
+out vec2 unitPosition;
+out float innerUnitRadius;
 
 void main(void) {
   // Multiply out radius and clamp to limits
