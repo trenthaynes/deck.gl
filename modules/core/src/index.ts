@@ -26,7 +26,7 @@ import './lib/init';
 import './shaderlib';
 
 // Core Library
-export {COORDINATE_SYSTEM, UNIT} from './lib/constants';
+export {COORDINATE_SYSTEM, OPERATION, UNIT} from './lib/constants';
 
 // Effects
 export {default as LightingEffect} from './effects/lighting/lighting-effect';
@@ -53,6 +53,9 @@ export {default as DeckRenderer} from './lib/deck-renderer';
 export {default as Viewport} from './viewports/viewport';
 export {default as WebMercatorViewport} from './viewports/web-mercator-viewport';
 export {default as _GlobeViewport} from './viewports/globe-viewport';
+export {default as OrbitViewport} from './viewports/orbit-viewport';
+export {default as OrthographicViewport} from './viewports/orthographic-viewport';
+export {default as FirstPersonViewport} from './viewports/first-person-viewport';
 
 // Shader modules
 export {picking, project, project32, gouraudLighting, phongLighting, shadow} from './shaderlib';
@@ -80,7 +83,7 @@ export {default as LayerExtension} from './lib/layer-extension';
 export {TRANSITION_EVENTS} from './controllers/transition-manager';
 export {default as TransitionInterpolator} from './transitions/transition-interpolator';
 export {default as LinearInterpolator} from './transitions/linear-interpolator';
-export {default as FlyToInterpolator} from './transitions/viewport-fly-to-interpolator';
+export {default as FlyToInterpolator} from './transitions/fly-to-interpolator';
 
 // Layer utilities
 export {default as log} from './utils/log';
@@ -94,3 +97,21 @@ export {count as _count} from './utils/count';
 export {default as _memoize} from './utils/memoize';
 export {mergeShaders as _mergeShaders} from './utils/shader';
 export {compareProps as _compareProps} from './lifecycle/props';
+
+// Types
+
+export type {MapViewState} from './views/map-view';
+export type {FirstPersonViewState} from './views/first-person-view';
+export type {OrbitViewState} from './views/orbit-view';
+export type {OrthographicViewState} from './views/orthographic-view';
+export type {GlobeViewState} from './views/globe-view';
+export type {LayerContext} from './lib/layer-manager';
+export type {
+  LayerProps,
+  CompositeLayerProps,
+  Accessor,
+  LayerData,
+  Unit,
+  Position,
+  Color
+} from './types/layer-props';

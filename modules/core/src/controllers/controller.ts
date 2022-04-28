@@ -19,18 +19,19 @@
 // THE SOFTWARE.
 
 /* eslint-disable max-statements, complexity */
-import TransitionManager, {TRANSITION_EVENTS} from './transition-manager';
+import TransitionManager, {TransitionProps} from './transition-manager';
 import LinearInterpolator from '../transitions/linear-interpolator';
+import {IViewState} from './view-state';
+import {ConstructorOf} from '../types/types';
+
+import type Viewport from '../viewports/viewport';
+
+import type {EventManager, MjolnirEvent, MjolnirGestureEvent, MjolnirWheelEvent, MjolnirKeyEvent} from 'mjolnir.js';
+import type {Timeline} from '@luma.gl/core';
 
 const NO_TRANSITION_PROPS = {
   transitionDuration: 0
-};
-
-const LINEAR_TRANSITION_PROPS = {
-  transitionDuration: 300,
-  transitionEasing: t => t,
-  transitionInterruption: TRANSITION_EVENTS.BREAK
-};
+} as const;
 
 const DEFAULT_INERTIA = 300;
 const INERTIA_EASING = t => 1 - (1 - t) * (1 - t);
@@ -42,91 +43,146 @@ const EVENT_TYPES = {
   TRIPLE_PAN: ['tripanstart', 'tripanmove', 'tripanend'],
   DOUBLE_TAP: ['doubletap'],
   KEYBOARD: ['keydown']
+} as const;
+
+/** Configuration of how user input is handled */
+export type ControllerOptions = {
+  /** Enable zooming with mouse wheel. Default `true`. */
+  scrollZoom?: boolean | {
+    /** Scaler that translates wheel delta to the change of viewport scale. Default `0.01`. */
+    speed?: number;
+    /** Smoothly transition to the new zoom. If enabled, will provide a slightly lagged but smoother experience. Default `false`. */
+    smooth?: boolean
+  };
+  /** Enable panning with pointer drag. Default `true` */
+  dragPan?: boolean;
+  /** Enable rotating with pointer drag. Default `true` */
+  dragRotate?: boolean;
+  /** Enable zooming with double click. Default `true` */
+  doubleClickZoom?: boolean;
+  /** Enable zooming with multi-touch. Default `true` */
+  touchZoom?: boolean;
+  /** Enable rotating with multi-touch. Use two-finger rotating gesture for horizontal and three-finger swiping gesture for vertical rotation. Default `false` */
+  touchRotate?: boolean;
+  /** Enable interaction with keyboard. Default `true`. */
+  keyboard?:
+    | boolean
+    | {
+        /** Speed of zoom using +/- keys. Default `2` */
+        zoomSpeed?: number;
+        /** Speed of movement using arrow keys, in pixels. */
+        moveSpeed?: number;
+        /** Speed of rotation using shift + left/right arrow keys, in degrees. Default 15. */
+        rotateSpeedX?: number;
+        /** Speed of rotation using shift + up/down arrow keys, in degrees. Default 10. */
+        rotateSpeedY?: number;
+      };
+  /** Drag behavior without pressing function keys, one of `pan` and `rotate`. */
+  dragMode?: 'pan' | 'rotate';
+  /** Enable inertia after panning/pinching. If a number is provided, indicates the duration of time over which the velocity reduces to zero, in milliseconds. Default `false`. */
+  inertia?: boolean | number;
 };
 
-type ControllerProps = {
-  scrollZoom?: boolean | {speed?: number; smooth?: boolean};
-  dragPan?: boolean;
-  dragRotate?: boolean;
-  doubleClickZoom?: boolean;
-  touchZoom?: boolean;
-  touchRotate?: boolean;
-  keyboard?:
+export type ControllerProps = {
+  /** Identifier of the controller */
+  id: string;
+  /** Viewport x position */
+  x: number;
+  /** Viewport y position */
+  y: number;
+  /** Viewport width */
+  width: number;
+  /** Viewport height */
+  height: number;
+} & ControllerOptions & TransitionProps;
+
+/** The state of a controller */
+export type InteractionState = {
+  /** If the view state is in transition */
+  inTransition?: boolean;
+  /** If the user is dragging */
+  isDragging?: boolean;
+  /** If the view is being panned, either from user input or transition */
+  isPanning?: boolean;
+  /** If the view is being rotated, either from user input or transition */
+  isRotating?: boolean;
+  /** If the view is being zoomed, either from user input or transition */
+  isZooming?: boolean;
+}
+
+/** Parameters passed to the onViewStateChange callback */
+export type ViewStateChangeParameters = {
+  /** The next view state, either from user input or transition */
+  viewState: Record<string, any>;
+  /** Object describing the nature of the view state change */
+  interactionState: InteractionState;
+  /** The current view state */
+  oldViewState?: Record<string, any>;
+}
+
+const pinchEventWorkaround: any = {};
+
+export default abstract class Controller<ControllerState extends IViewState<ControllerState>> {
+  abstract get ControllerState(): ConstructorOf<ControllerState>;
+  abstract get transition(): TransitionProps;
+
+  // @ts-expect-error (2564) - not assigned in the constructor
+  protected props: ControllerProps;
+  protected state: Record<string, any> = {};
+
+  protected transitionManager: TransitionManager<ControllerState>;
+  protected eventManager: EventManager;
+  protected onViewStateChange: (params: ViewStateChangeParameters) => void;
+  protected onStateChange: (state: InteractionState) => void;
+  protected makeViewport: (opts: Record<string, any>) => Viewport
+
+  private _controllerState?: ControllerState;
+  private _events: Record<string, boolean> = {};
+  private _interactionState: InteractionState = {
+    isDragging: false
+  };
+  private _customEvents: string[] = [];
+  private _eventStartBlocked: any = null;
+  private _panMove: boolean = false;
+
+  protected invertPan: boolean = false;
+  protected dragMode: 'pan' | 'rotate' = 'rotate';
+  protected inertia: number = 0;
+  protected scrollZoom: boolean | {speed?: number; smooth?: boolean} = true;
+  protected dragPan: boolean = true;
+  protected dragRotate: boolean = true;
+  protected doubleClickZoom: boolean = true;
+  protected touchZoom: boolean = true;
+  protected touchRotate: boolean = false;
+  protected keyboard:
     | boolean
     | {
         zoomSpeed?: number; //  speed of zoom using +/- keys. Default 2.
         moveSpeed?: number; //  speed of movement using arrow keys, in pixels.
         rotateSpeedX?: number; //  speed of rotation using shift + left/right arrow keys, in degrees. Default 15.
         rotateSpeedY?: number; //  speed of rotation using shift + up/down arrow keys, in degrees. Default 10.
-      };
-  dragMode?: 'pan' | 'rotate';
-  inertia?: boolean | number;
-};
-
-export default class Controller {
-  ControllerState;
-  controllerState: Record<string, any> | null = null;
-  controllerStateProps: Record<string, any> | null = null;
-  transitionManager: TransitionManager;
-  _transition;
-  _events: Record<string, any> | null = null;
-  eventManager: any = null;
-  _interactionState = {
-    isDragging: false
-  };
-  _customEvents = [];
-  onViewStateChange = null;
-  onStateChange = null;
-
-  makeViewport;
-  _eventStartBlocked;
-  _state;
-
-  _panMove;
-  invertPan;
-  dragMode: 'pan' | 'rotate' = 'rotate';
-
-  inertia: number = 0;
-
-  scrollZoom: boolean | {speed?: number; smooth?: boolean} = true;
-  dragPan: boolean = true;
-  dragRotate: boolean = true;
-  doubleClickZoom: boolean = true;
-  touchZoom: boolean = true;
-  touchRotate: boolean = false;
-  keyboard:
-    | boolean
-    | {
-        zoomSpeed: number; //  speed of zoom using +/- keys. Default 2.
-        moveSpeed: number; //  speed of movement using arrow keys, in pixels.
-        rotateSpeedX: number; //  speed of rotation using shift + left/right arrow keys, in degrees. Default 15.
-        rotateSpeedY: number; //  speed of rotation using shift + up/down arrow keys, in degrees. Default 10.
       } = true;
 
-  constructor(ControllerState, options: ControllerProps = {}) {
-    this.ControllerState = ControllerState;
-    this.transitionManager = new TransitionManager(ControllerState, {
-      ...options,
+  constructor(opts: {
+    timeline: Timeline,
+    eventManager: EventManager;
+    makeViewport: (opts: Record<string, any>) => Viewport;
+    onViewStateChange: (params: ViewStateChangeParameters) => void;
+    onStateChange: (state: InteractionState) => void;
+  }) {
+    this.transitionManager = new TransitionManager<ControllerState>({
+      ...opts,
+      getControllerState: props => new this.ControllerState(props),
       onViewStateChange: this._onTransition.bind(this),
       onStateChange: this._setInteractionState.bind(this)
     });
 
-    const linearTransitionProps = this.linearTransitionProps;
-    this._transition = linearTransitionProps && {
-      ...LINEAR_TRANSITION_PROPS,
-      // @ts-expect-error
-      transitionInterpolator: new LinearInterpolator({
-        transitionProps: linearTransitionProps
-      })
-    };
-
     this.handleEvent = this.handleEvent.bind(this);
 
-    this.setProps(options);
-  }
-
-  get linearTransitionProps(): string[] | null {
-    return null;
+    this.eventManager = opts.eventManager;
+    this.onViewStateChange = opts.onViewStateChange || (() => {});
+    this.onStateChange = opts.onStateChange || (() => {});
+    this.makeViewport = opts.makeViewport;
   }
 
   set events(customEvents) {
@@ -134,14 +190,16 @@ export default class Controller {
     this.toggleEvents(customEvents, true);
     this._customEvents = customEvents;
     // Make sure default events are not overwritten
-    this.setProps(this.controllerStateProps);
+    if (this.props) {
+      this.setProps(this.props);
+    }
   }
 
   finalize() {
     for (const eventName in this._events) {
       if (this._events[eventName]) {
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.eventManager.off(eventName, this.handleEvent);
+        this.eventManager?.off(eventName, this.handleEvent);
       }
     }
     this.transitionManager.finalize();
@@ -149,15 +207,10 @@ export default class Controller {
 
   /**
    * Callback for events
-   * @param {hammer.Event} event
    */
-  handleEvent(event) {
-    const {ControllerState} = this;
-    this.controllerState = new ControllerState({
-      makeViewport: this.makeViewport,
-      ...this.controllerStateProps,
-      ...this._state
-    });
+  handleEvent(event: MjolnirEvent) {
+    // Force recalculate controller state
+    this._controllerState = undefined;
     const eventStartBlocked = this._eventStartBlocked;
 
     switch (event.type) {
@@ -192,15 +245,23 @@ export default class Controller {
 
   /* Event utils */
   // Event object: http://hammerjs.github.io/api/#event-object
-  getCenter(event) {
-    const {x, y} = this.controllerStateProps;
+  get controllerState(): ControllerState {
+    this._controllerState = this._controllerState || new this.ControllerState({
+      makeViewport: this.makeViewport,
+      ...this.props,
+      ...this.state
+    });
+    return this._controllerState ;
+  }
+
+  getCenter(event: MjolnirGestureEvent | MjolnirWheelEvent) : [number, number] {
+    const {x, y} = this.props;
     const {offsetCenter} = event;
     return [offsetCenter.x - x, offsetCenter.y - y];
   }
 
-  isPointInBounds(pos, event) {
-    // @ts-expect-error
-    const {width, height} = this.controllerStateProps;
+  isPointInBounds(pos: [number, number], event: MjolnirEvent): boolean {
+    const {width, height} = this.props;
     if (event && event.handled) {
       return false;
     }
@@ -212,19 +273,19 @@ export default class Controller {
     return inside;
   }
 
-  isFunctionKeyPressed(event) {
+  isFunctionKeyPressed(event: MjolnirEvent): boolean {
     const {srcEvent} = event;
     return Boolean(srcEvent.metaKey || srcEvent.altKey || srcEvent.ctrlKey || srcEvent.shiftKey);
   }
 
-  isDragging() {
-    return this._interactionState.isDragging;
+  isDragging(): boolean {
+    return this._interactionState.isDragging || false;
   }
 
   // When a multi-touch event ends, e.g. pinch, not all pointers are lifted at the same time.
   // This triggers a brief `pan` event.
   // Calling this method will temporarily disable *start events to avoid conflicting transitions.
-  blockEvents(timeout) {
+  blockEvents(timeout: number): void {
     /* global setTimeout */
     const timer = setTimeout(() => {
       if (this._eventStartBlocked === timer) {
@@ -237,27 +298,11 @@ export default class Controller {
   /**
    * Extract interactivity options
    */
-  setProps(props) {
-    if ('onViewStateChange' in props) {
-      this.onViewStateChange = props.onViewStateChange;
-    }
-    if ('onStateChange' in props) {
-      this.onStateChange = props.onStateChange;
-    }
-    if ('makeViewport' in props) {
-      this.makeViewport = props.makeViewport;
-    }
-    if ('dragMode' in props) {
+  setProps(props: ControllerProps) {
+    if (props.dragMode) {
       this.dragMode = props.dragMode;
     }
-    this.controllerStateProps = props;
-
-    if ('eventManager' in props && this.eventManager !== props.eventManager) {
-      // EventManager has changed
-      this.eventManager = props.eventManager;
-      this._events = {};
-      this.toggleEvents(this._customEvents, true);
-    }
+    this.props = props;
 
     if (!('transitionInterpolator' in props)) {
       // Add default transition interpolator
@@ -266,11 +311,8 @@ export default class Controller {
 
     this.transitionManager.processViewStateChange(props);
 
-    let {inertia} = props;
-    if (inertia === true) {
-      inertia = DEFAULT_INERTIA;
-    }
-    this.inertia = inertia;
+    const {inertia} = props;
+    this.inertia = Number.isFinite(inertia) ? (inertia as number) : (inertia === true ? DEFAULT_INERTIA : 0);
 
     // TODO - make sure these are not reset on every setProps
     const {
@@ -309,9 +351,7 @@ export default class Controller {
   toggleEvents(eventNames, enabled) {
     if (this.eventManager) {
       eventNames.forEach(eventName => {
-        // @ts-expect-error
         if (this._events[eventName] !== enabled) {
-          // @ts-expect-error
           this._events[eventName] = enabled;
           if (enabled) {
             // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -329,7 +369,7 @@ export default class Controller {
 
   /* Callback util */
   // formats map state and invokes callback function
-  updateViewport(newControllerState, extraProps = {}, interactionState = {}) {
+  protected updateViewport(newControllerState: ControllerState, extraProps: Record<string, any> | null = null, interactionState: InteractionState = {}) {
     const viewState = {...newControllerState.getViewportProps(), ...extraProps};
 
     // TODO - to restore diffing, we need to include interactionState
@@ -337,47 +377,38 @@ export default class Controller {
     // const oldViewState = this.controllerState.getViewportProps();
     // const changed = Object.keys(viewState).some(key => oldViewState[key] !== viewState[key]);
 
-    this._state = newControllerState.getState();
+    this.state = newControllerState.getState();
     this._setInteractionState(interactionState);
 
     if (changed) {
-      const oldViewState = this.controllerState ? this.controllerState.getViewportProps() : null;
+      const oldViewState = this.controllerState && this.controllerState.getViewportProps();
       if (this.onViewStateChange) {
-        // @ts-expect-error
         this.onViewStateChange({viewState, interactionState: this._interactionState, oldViewState});
       }
     }
   }
 
-  _onTransition(params) {
-    if (this.onViewStateChange) {
-      params.interactionState = this._interactionState;
-      // @ts-expect-error
-      this.onViewStateChange(params);
-    }
+  private _onTransition(params: {viewState: Record<string, any>, oldViewState: Record<string, any>}) {
+    this.onViewStateChange({...params, interactionState: this._interactionState});
   }
 
-  _setInteractionState(newStates) {
+  private _setInteractionState(newStates: InteractionState) {
     Object.assign(this._interactionState, newStates);
-    if (this.onStateChange) {
-      // @ts-expect-error
-      this.onStateChange(this._interactionState);
-    }
+    this.onStateChange(this._interactionState);
   }
 
   /* Event handlers */
   // Default handler for the `panstart` event.
-  _onPanStart(event) {
+  protected _onPanStart(event: MjolnirGestureEvent): boolean {
     const pos = this.getCenter(event);
     if (!this.isPointInBounds(pos, event)) {
       return false;
     }
-    let alternateMode = this.isFunctionKeyPressed(event) || event.rightButton;
+    let alternateMode = this.isFunctionKeyPressed(event) || event.rightButton || false;
     if (this.invertPan || this.dragMode === 'pan') {
       // invertPan is replaced by props.dragMode, keeping for backward compatibility
       alternateMode = !alternateMode;
     }
-    // @ts-expect-error
     const newControllerState = this.controllerState[alternateMode ? 'panStart' : 'rotateStart']({
       pos
     });
@@ -387,14 +418,14 @@ export default class Controller {
   }
 
   // Default handler for the `panmove` and `panend` event.
-  _onPan(event) {
+  protected _onPan(event: MjolnirGestureEvent): boolean {
     if (!this.isDragging()) {
       return false;
     }
     return this._panMove ? this._onPanMove(event) : this._onPanRotate(event);
   }
 
-  _onPanEnd(event) {
+  protected _onPanEnd(event: MjolnirGestureEvent): boolean {
     if (!this.isDragging()) {
       return false;
     }
@@ -403,12 +434,11 @@ export default class Controller {
 
   // Default handler for panning to move.
   // Called by `_onPan` when panning without function key pressed.
-  _onPanMove(event) {
+  protected _onPanMove(event: MjolnirGestureEvent): boolean {
     if (!this.dragPan) {
       return false;
     }
     const pos = this.getCenter(event);
-    // @ts-expect-error
     const newControllerState = this.controllerState.pan({pos});
     this.updateViewport(newControllerState, NO_TRANSITION_PROPS, {
       isDragging: true,
@@ -417,15 +447,14 @@ export default class Controller {
     return true;
   }
 
-  _onPanMoveEnd(event) {
+  protected _onPanMoveEnd(event: MjolnirGestureEvent): boolean {
     const {inertia} = this;
     if (this.dragPan && inertia && event.velocity) {
       const pos = this.getCenter(event);
-      const endPos = [
+      const endPos: [number, number] = [
         pos[0] + (event.velocityX * inertia) / 2,
         pos[1] + (event.velocityY * inertia) / 2
       ];
-      // @ts-expect-error
       const newControllerState = this.controllerState.pan({pos: endPos}).panEnd();
       this.updateViewport(
         newControllerState,
@@ -440,9 +469,7 @@ export default class Controller {
         }
       );
     } else {
-      // @ts-expect-error
       const newControllerState = this.controllerState.panEnd();
-      // @ts-expect-error
       this.updateViewport(newControllerState, null, {
         isDragging: false,
         isPanning: false
@@ -453,13 +480,12 @@ export default class Controller {
 
   // Default handler for panning to rotate.
   // Called by `_onPan` when panning with function key pressed.
-  _onPanRotate(event) {
+  protected _onPanRotate(event: MjolnirGestureEvent): boolean {
     if (!this.dragRotate) {
       return false;
     }
 
     const pos = this.getCenter(event);
-    // @ts-expect-error
     const newControllerState = this.controllerState.rotate({pos});
     this.updateViewport(newControllerState, NO_TRANSITION_PROPS, {
       isDragging: true,
@@ -468,15 +494,14 @@ export default class Controller {
     return true;
   }
 
-  _onPanRotateEnd(event) {
+  protected _onPanRotateEnd(event): boolean {
     const {inertia} = this;
     if (this.dragRotate && inertia && event.velocity) {
       const pos = this.getCenter(event);
-      const endPos = [
+      const endPos: [number, number] = [
         pos[0] + (event.velocityX * inertia) / 2,
         pos[1] + (event.velocityY * inertia) / 2
       ];
-      // @ts-expect-error
       const newControllerState = this.controllerState.rotate({pos: endPos}).rotateEnd();
       this.updateViewport(
         newControllerState,
@@ -491,9 +516,7 @@ export default class Controller {
         }
       );
     } else {
-      // @ts-expect-error
       const newControllerState = this.controllerState.rotateEnd();
-      // @ts-expect-error
       this.updateViewport(newControllerState, null, {
         isDragging: false,
         isRotating: false
@@ -503,19 +526,18 @@ export default class Controller {
   }
 
   // Default handler for the `wheel` event.
-  _onWheel(event) {
+  protected _onWheel(event: MjolnirWheelEvent): boolean {
     if (!this.scrollZoom) {
       return false;
     }
-    event.preventDefault();
+    event.srcEvent.preventDefault();
 
     const pos = this.getCenter(event);
     if (!this.isPointInBounds(pos, event)) {
       return false;
     }
 
-    // @ts-expect-error
-    const {speed = 0.01, smooth = false} = this.scrollZoom;
+    const {speed = 0.01, smooth = false} = this.scrollZoom === true ? {} : this.scrollZoom;
     const {delta} = event;
 
     // Map wheel delta to relative scale
@@ -536,7 +558,7 @@ export default class Controller {
     return true;
   }
 
-  _onTriplePanStart(event) {
+  protected _onTriplePanStart(event: MjolnirGestureEvent): boolean {
     const pos = this.getCenter(event);
     if (!this.isPointInBounds(pos, event)) {
       return false;
@@ -546,7 +568,7 @@ export default class Controller {
     return true;
   }
 
-  _onTriplePan(event) {
+  protected _onTriplePan(event: MjolnirGestureEvent): boolean {
     if (!this.touchRotate) {
       return false;
     }
@@ -565,14 +587,14 @@ export default class Controller {
     return true;
   }
 
-  _onTriplePanEnd(event) {
+  protected _onTriplePanEnd(event: MjolnirGestureEvent): boolean {
     if (!this.isDragging()) {
       return false;
     }
     const {inertia} = this;
     if (this.touchRotate && inertia && event.velocityY) {
       const pos = this.getCenter(event);
-      const endPos = [pos[0], (pos[1] += (event.velocityY * inertia) / 2)];
+      const endPos: [number, number] = [pos[0], (pos[1] += (event.velocityY * inertia) / 2)];
       const newControllerState = this.controllerState.rotate({pos: endPos});
       this.updateViewport(
         newControllerState,
@@ -598,7 +620,7 @@ export default class Controller {
   }
 
   // Default handler for the `pinchstart` event.
-  _onPinchStart(event) {
+  protected _onPinchStart(event: MjolnirGestureEvent): boolean {
     const pos = this.getCenter(event);
     if (!this.isPointInBounds(pos, event)) {
       return false;
@@ -606,14 +628,14 @@ export default class Controller {
 
     const newControllerState = this.controllerState.zoomStart({pos}).rotateStart({pos});
     // hack - hammer's `rotation` field doesn't seem to produce the correct angle
-    this._startPinchRotation = event.rotation;
-    this._lastPinchEvent = event;
+    pinchEventWorkaround._startPinchRotation = event.rotation;
+    pinchEventWorkaround._lastPinchEvent = event;
     this.updateViewport(newControllerState, NO_TRANSITION_PROPS, {isDragging: true});
     return true;
   }
 
   // Default handler for the `pinchmove` and `pinchend` events.
-  _onPinch(event) {
+  protected _onPinch(event: MjolnirGestureEvent): boolean {
     if (!this.touchZoom && !this.touchRotate) {
       return false;
     }
@@ -630,7 +652,7 @@ export default class Controller {
     if (this.touchRotate) {
       const {rotation} = event;
       newControllerState = newControllerState.rotate({
-        deltaAngleX: this._startPinchRotation - rotation
+        deltaAngleX: pinchEventWorkaround._startPinchRotation - rotation
       });
     }
 
@@ -640,15 +662,16 @@ export default class Controller {
       isZooming: this.touchZoom,
       isRotating: this.touchRotate
     });
-    this._lastPinchEvent = event;
+    pinchEventWorkaround._lastPinchEvent = event;
     return true;
   }
 
-  _onPinchEnd(event) {
+  protected _onPinchEnd(event: MjolnirGestureEvent): boolean {
     if (!this.isDragging()) {
       return false;
     }
-    const {inertia, _lastPinchEvent} = this;
+    const {inertia} = this;
+    const {_lastPinchEvent} = pinchEventWorkaround;
     if (this.touchZoom && inertia && _lastPinchEvent && event.scale !== _lastPinchEvent.scale) {
       const pos = this.getCenter(event);
       let newControllerState = this.controllerState.rotateEnd();
@@ -682,13 +705,13 @@ export default class Controller {
         isRotating: false
       });
     }
-    this._startPinchRotation = null;
-    this._lastPinchEvent = null;
+    pinchEventWorkaround._startPinchRotation = null;
+    pinchEventWorkaround._lastPinchEvent = null;
     return true;
   }
 
   // Default handler for the `doubletap` event.
-  _onDoubleTap(event) {
+  protected _onDoubleTap(event: MjolnirGestureEvent): boolean {
     if (!this.doubleClickZoom) {
       return false;
     }
@@ -709,15 +732,16 @@ export default class Controller {
   }
 
   // Default handler for the `keydown` event
-  _onKeyDown(event) {
+  protected _onKeyDown(event: MjolnirKeyEvent): boolean {
     if (!this.keyboard) {
       return false;
     }
     const funcKey = this.isFunctionKeyPressed(event);
-    const {zoomSpeed, moveSpeed, rotateSpeedX, rotateSpeedY} = this.keyboard;
+    // @ts-ignore
+    const {zoomSpeed, moveSpeed, rotateSpeedX, rotateSpeedY} = this.keyboard === true ? {} : this.keyboard;
     const {controllerState} = this;
     let newControllerState;
-    const interactionState = {};
+    const interactionState: InteractionState = {};
 
     switch (event.srcEvent.code) {
       case 'Minus':
@@ -775,23 +799,23 @@ export default class Controller {
     return true;
   }
 
-  _getTransitionProps(opts?) {
-    const {_transition} = this;
+  protected _getTransitionProps(opts?: any): TransitionProps {
+    const {transition} = this;
 
-    if (!_transition) {
+    if (!transition || !transition.transitionInterpolator) {
       return NO_TRANSITION_PROPS;
     }
 
     // Enables Transitions on double-tap and key-down events.
     return opts
       ? {
-        ..._transition,
+        ...transition,
         transitionInterpolator: new LinearInterpolator({
           ...opts,
-          transitionProps: this.linearTransitionProps,
+          ...(transition.transitionInterpolator as LinearInterpolator).opts,
           makeViewport: this.controllerState.makeViewport
         })
       }
-      : _transition;
+      : transition;
   }
 }

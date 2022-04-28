@@ -46,7 +46,9 @@ test('Attribute#constructor', t => {
 });
 
 test('Attribute#delete', t => {
-  const attribute = new Attribute(gl, {size: 1, accessor: 'a', value: new Float32Array(4)});
+  const attribute = new Attribute(gl, {size: 1, accessor: 'a'});
+  attribute.setData(new Float32Array(4));
+
   t.ok(attribute._buffer, 'Attribute created Buffer object');
 
   attribute.delete();
@@ -255,7 +257,6 @@ test('Attribute#shaderAttributes', t => {
     id: 'positions',
     update,
     size: 3,
-    buffer: buffer1,
     shaderAttributes: {
       positions: {},
       instancePositions: {
@@ -267,6 +268,8 @@ test('Attribute#shaderAttributes', t => {
       }
     }
   });
+  attribute.setData({buffer: buffer1});
+
   const shaderAttributes = attribute.getShaderAttributes();
   t.ok(shaderAttributes.positions, 'Shader attribute created');
   let accessor = shaderAttributes.positions.getAccessor();
@@ -1094,4 +1097,77 @@ test('Attribute#doublePrecision', t0 => {
   });
 
   t0.end();
+});
+
+test('Attribute#updateBuffer', t => {
+  const attribute = new Attribute(gl, {
+    id: 'positions',
+    type: GL.DOUBLE,
+    fp64: false,
+    size: 3,
+    accessor: 'getPosition'
+  });
+
+  t.is(attribute.getBounds(), null, 'Empty attribute does not have bounds');
+
+  attribute.numInstances = 3;
+  attribute.allocate(3);
+  attribute.updateBuffer({
+    numInstances: 3,
+    data: [0, 1, 2],
+    props: {
+      getPosition: d => [d, 1, -1]
+    }
+  });
+
+  let bounds = attribute.getBounds();
+  t.deepEqual(
+    bounds,
+    [
+      [0, 1, -1],
+      [2, 1, -1]
+    ],
+    'Calculated attribute bounds'
+  );
+  t.is(bounds, attribute.getBounds(), 'bounds is cached');
+
+  attribute.setNeedsUpdate();
+  attribute.numInstances = 2;
+  attribute.allocate(2);
+  attribute.updateBuffer({
+    numInstances: 2,
+    data: [0, 1],
+    props: {
+      getPosition: d => [d, 1, 2]
+    }
+  });
+
+  bounds = attribute.getBounds();
+  t.deepEqual(
+    bounds,
+    [
+      [0, 1, 2],
+      [1, 1, 2]
+    ],
+    'Calculated attribute bounds'
+  );
+  t.is(bounds, attribute.getBounds(), 'bounds is cached');
+
+  attribute.setNeedsUpdate();
+  attribute.setConstantValue([-1, 0, 1]);
+
+  bounds = attribute.getBounds();
+  t.deepEqual(
+    bounds,
+    [
+      [-1, 0, 1],
+      [-1, 0, 1]
+    ],
+    'Calculated attribute bounds'
+  );
+  t.is(bounds, attribute.getBounds(), 'bounds is cached');
+
+  attribute.delete();
+
+  t.end();
 });

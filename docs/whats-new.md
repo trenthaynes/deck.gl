@@ -2,6 +2,37 @@
 
 This page contains highlights of each deck.gl release. Also check our [vis.gl blog](https://medium.com/vis-gl) for news about new releases and features in deck.gl.
 
+## deck.gl v8.7
+
+Release date: February 25, 2022
+
+### MaskExtension
+
+The new [MaskExtension](/docs/api-reference/extensions/mask-extension) allows layers to show/hide objects by a geofence. For example, a map may filter a list of user locations by the boundaries of a given country, or highlight part of a base map that is inside a user-drawn circle or lasso area.
+
+![Masking Manhattan buildings](https://raw.githubusercontent.com/visgl/deck.gl-data/master/images/whats-new/mask-extension.gif)
+
+### QuadkeyLayer
+
+The new [QuadkeyLayer](/docs/api-reference/geo-layers/quadkey-layer) renders filled and/or stroked polygons, with geometry automatically calculated based on a quadkey (geospatial index).
+
+### Enhancements
+
+- `TileLayer` reduced `refinementStrategy: 'no-overlap'`.
+- `TileLayer` `refinementStrategy` now accepts a callback function enabling customer refinement strategies.
+- `TerrainLayer` can now be used with non-geospatial views.
+- `ColumnLayer` adds `flatShading` prop.
+- `GlobeView` lighting in 3D layers is more consistent.
+- `GoogleMapsOverlay` supports camera tilt and bearing for raster maps.
+- `MVTLayer` now supports `pointType: 'text'` in `binary` mode.
+- Picking with `project3D: true` now returns more accurate result in non-geospatial views.
+
+
+### `@deck.gl/carto`
+
+- **fetchMap** - [fetchMap](/docs/api-reference/carto/fetch-map) is added to the [CARTO deck.gl submodule](/docs/api-reference/carto/overview), streamlining the display of maps created using CARTO platform.
+- **Support for large tables and Databricks**. See [CARTO documentation](https://docs.carto.com/deck-gl/getting-started/) for more details.
+
 ## deck.gl v8.6
 
 Release date: October 11, 2021
@@ -1511,7 +1542,7 @@ For developers that write their own custom layers, the `shadertools` shader asse
 
 ### Per-Layer Control of WebGL Parameters
 
-The base `Layer` class (which is inherited by all layers) supports a new property `parameters` that allows applications to specify the state of WebGL parameters such as blending mode, depth testing etc. This provides applications with significant control over the detailed rendering of layers. Note that the new `parameters` prop directly leverages the luma.gl v4 [setParameters](https://luma.gl/docs/api-reference/gltools/parameter-setting#setparameters) API, which allows all WebGL parameters to be specified as keys in a single parameter object.
+The base `Layer` class (which is inherited by all layers) supports a new property `parameters` that allows applications to specify the state of WebGL parameters such as blending mode, depth testing etc. This provides applications with significant control over the detailed rendering of layers. Note that the new `parameters` prop directly leverages the luma.gl v4 [setParameters](https://luma.gl/docs/api-reference-legacy/context/parameter-setting#setparameters) API, which allows all WebGL parameters to be specified as keys in a single parameter object.
 
 
 ### Layer Attribute Control

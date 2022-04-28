@@ -57,10 +57,19 @@ export const COORDINATE_SYSTEM = {
   CARTESIAN: 0
 } as const;
 
+// We can't define enum COORDINATE_SYSTEM to use it as both type and value because
+// TypeScript emits reverse mapping for enums which adds integer keys to the object
+// project.glsl dynamically generates shader constant declarations from COORDINATE_SYSTEM and will break if the key is a number
+// TODO - Find a cleaner solution
+export type CoordinateSystem = -1 | 0 | 1 | 2 | 3;
+
 // Deprecated
 /* eslint-disable accessor-pairs */
 Object.defineProperty(COORDINATE_SYSTEM, 'IDENTITY', {
-  get: () => log.deprecated('COORDINATE_SYSTEM.IDENTITY', 'COORDINATE_SYSTEM.CARTESIAN')() || 0
+  get: () => {
+    log.deprecated('COORDINATE_SYSTEM.IDENTITY', 'COORDINATE_SYSTEM.CARTESIAN')();
+    return 0;
+  }
 });
 /* eslint-enable accessor-pairs */
 
@@ -99,4 +108,12 @@ export const EVENTS = {
   panstart: {handler: 'onDragStart'},
   panmove: {handler: 'onDrag'},
   panend: {handler: 'onDragEnd'}
+} as const;
+
+/**
+ * The rendering operation to perform with a layer, used in the `operation` prop
+ */
+export const OPERATION = {
+  DRAW: 'draw',
+  MASK: 'mask'
 } as const;

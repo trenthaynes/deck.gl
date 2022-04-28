@@ -1,8 +1,8 @@
 <html>
     <head>
         <!-- deck.gl standalone bundle -->
-        <script src="https://unpkg.com/deck.gl@^8.7.0-alpha.2/dist.min.js"></script>
-        <script src="https://unpkg.com/@deck.gl/carto@^8.7.0-alpha.2/dist.min.js"></script>
+        <script src="https://unpkg.com/deck.gl@^8.7.0-beta.6/dist.min.js"></script>
+        <script src="https://unpkg.com/@deck.gl/carto@^8.7.0-beta.6/dist.min.js"></script>
         <!-- Mapbox dependencies -->
         <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.0/mapbox-gl.js"></script>
         <link
@@ -42,7 +42,7 @@
     </body>
 
     <script type="text/javascript">
-        const cartoMapId = '52dcbaa4-f84c-4fc8-93a9-628ed859f937';
+        const cartoMapId = 'ff6ac53f-741a-49fb-b615-d040bc5a96b8';
 
         // Get map info from CARTO and update deck
         deck.carto.fetchMap({cartoMapId}).then(({initialViewState, mapStyle, layers}) => {

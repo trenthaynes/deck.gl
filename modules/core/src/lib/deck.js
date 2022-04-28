@@ -215,7 +215,7 @@ export default class Deck {
 
     // UNSAFE/experimental prop: only set at initialization to avoid performance hit
     if (props._typedArrayManagerProps) {
-      typedArrayManager.setProps(props._typedArrayManagerProps);
+      typedArrayManager.setOptions(props._typedArrayManagerProps);
     }
 
     this.animationLoop.start();
@@ -404,6 +404,7 @@ export default class Deck {
       views: this.viewManager.getViews(),
       viewports: this.getViewports(opts),
       onViewportActive: this.layerManager.activateViewport,
+      effects: this.effectManager.getEffects(),
       ...opts
     });
 

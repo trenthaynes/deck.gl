@@ -1,6 +1,7 @@
 import LayersPass, {LayersPassRenderOptions, RenderStats} from './layers-pass';
 import {withParameters} from '@luma.gl/core';
 import GL from '@luma.gl/constants';
+import {OPERATION} from '../lib/constants';
 import log from '../utils/log';
 
 import type {Framebuffer} from '@luma.gl/core';
@@ -23,6 +24,14 @@ type EncodedPickingColors = {
   layer: Layer;
   viewports: Viewport[];
 };
+
+export type PickingColorDecoder = (pickedColor: number[] | Uint8Array) =>
+  | {
+      pickedLayer: Layer;
+      pickedViewports: Viewport[];
+      pickedObjectIndex: number;
+    }
+  | undefined;
 
 export default class PickLayersPass extends LayersPass {
   private pickZ?: boolean;
@@ -51,18 +60,11 @@ export default class PickLayersPass extends LayersPass {
     onViewportActive,
     pickingFBO,
     deviceRect: {x, y, width, height},
+    effects,
     pass = 'picking',
     pickZ
   }: PickLayersPassRenderOptions): {
-    decodePickingColor:
-      | null
-      | ((pickedColor: number[]) =>
-          | {
-              pickedLayer: Layer;
-              pickedViewports: Viewport[];
-              pickedObjectIndex: number;
-            }
-          | undefined);
+    decodePickingColor: PickingColorDecoder | null;
     stats: RenderStats;
   } {
     const gl = this.gl;
@@ -108,6 +110,7 @@ export default class PickLayersPass extends LayersPass {
           views,
           viewports,
           onViewportActive,
+          effects: effects?.filter(e => e.useInPicking),
           pass
         })
     );
@@ -119,7 +122,7 @@ export default class PickLayersPass extends LayersPass {
   }
 
   protected shouldDrawLayer(layer: Layer): boolean {
-    return layer.props.pickable;
+    return layer.props.pickable && layer.props.operation === OPERATION.DRAW;
   }
 
   protected getModuleParameters() {
@@ -186,7 +189,7 @@ function decodeColor(
     byLayer: Map<Layer, EncodedPickingColors>;
     byAlpha: EncodedPickingColors[];
   },
-  pickedColor: number[]
+  pickedColor: number[] | Uint8Array
 ):
   | {
       pickedLayer: Layer;

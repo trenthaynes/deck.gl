@@ -28,7 +28,7 @@ type DrawLayerParameters = {
   layerParameters?: any;
 };
 
-type FilterContext = {
+export type FilterContext = {
   layer: Layer;
   viewport: Viewport;
   isPicking: boolean;
@@ -206,7 +206,7 @@ export default class LayersPass extends Pass {
         moduleParameters.viewport = viewport;
 
         try {
-          layer.drawLayer({
+          layer._drawLayer({
             moduleParameters,
             uniforms: {layerIndex: layerRenderIndex},
             parameters: layerParameters
@@ -281,15 +281,18 @@ export default class LayersPass extends Pass {
     pass: string,
     overrides: any
   ): any {
-    const moduleParameters = Object.assign(Object.create(layer.props), {
-      autoWrapLongitude: layer.wrapLongitude,
-      // @ts-ignore
-      viewport: layer.context.viewport,
-      // @ts-ignore
-      mousePosition: layer.context.mousePosition,
-      pickingActive: 0,
-      devicePixelRatio: cssToDeviceRatio(this.gl)
-    });
+    const moduleParameters = Object.assign(
+      Object.create(layer.internalState?.propsInTransition || layer.props),
+      {
+        autoWrapLongitude: layer.wrapLongitude,
+        // @ts-ignore
+        viewport: layer.context.viewport,
+        // @ts-ignore
+        mousePosition: layer.context.mousePosition,
+        pickingActive: 0,
+        devicePixelRatio: cssToDeviceRatio(this.gl)
+      }
+    );
 
     if (effects) {
       for (const effect of effects) {
@@ -361,7 +364,7 @@ function getGLViewport(
     target?: Framebuffer;
     viewport: Viewport;
   }
-): [x: number, y: number, width: number, height: number] {
+): [number, number, number, number] {
   const useTarget = target && target.id !== 'default-framebuffer';
   const pixelRatio =
     (moduleParameters && moduleParameters.devicePixelRatio) || cssToDeviceRatio(gl);

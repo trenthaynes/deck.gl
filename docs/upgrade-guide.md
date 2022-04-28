@@ -4,8 +4,8 @@
 
 #### Deprecations
 
-- `CartoBQTilerLayer` is removed. Use `CartoLayer` instead with `type` set to `MAP_TYPES.TILESET`.
-- `CartoSQLLayer` is removed. Use `CartoLayer` instead with `type` set to `MAP_TYPES.QUERY`.
+##### Core
+
 - `H3HexagonLayer` now uses flat shading when it renders a `ColumnLayer`. This change improves the visual consistency when using `highPrecision: 'auto'`. To revert to the old behavior, set the following prop:
 
   ```js
@@ -13,6 +13,13 @@
     'hexagon-cell': {flatShading: false}
   }
   ```
+- `H3ClusterLayer` sublayer is now called `'cell'` not `'cluster-region'`
+
+##### CARTO
+
+- `CartoBQTilerLayer` is removed. Use `CartoLayer` instead with `type` set to `MAP_TYPES.TILESET`.
+- `CartoSQLLayer` is removed. Use `CartoLayer` instead with `type` set to `MAP_TYPES.QUERY`.
+- `API_VERSIONS.V3` is the default for the CARTO module API calls. Use `setDefaultCredentials` to explicitly specify `V2`.
 
 ## Upgrading from deck.gl v8.5 to v8.6
 
@@ -334,7 +341,7 @@ See [View class](/docs/api-reference/core/view.md) documentation for details.
 #### Core
 
 - `layer.setLayerNeedsUpdate` is renamed to `layer.setNeedsUpdate()` and the old name will be removed in the next major release.
-- Previously deprecated `Layer` class method, `screenToDevicePixels`, is removed. Use luma.gl [utility methods](https://luma.gl/docs/api-reference/webgl-2-classes/device-pixels) instead.
+- Previously deprecated `Layer` class method, `screenToDevicePixels`, is removed. Use luma.gl [utility methods](https://luma.gl/docs/api-reference-legacy/context/device-pixels) instead.
 
 #### Layers
 
@@ -612,7 +619,7 @@ The default coordinate system `COORDINATE_SYSTEM.LNGLAT` is upgraded to offer hi
 
 #### luma.gl v6.0
 
-deck.gl v6.0 brings in luma.gl v6.0 which is a major release with a few breaking changes. The change that is most likely to affect deck.gl applications is probably that the way the `GL` constant is imported has changed. For details, see to the luma.gl [Upgrade Guide](https://luma.gl/docs/overview/upgrade-guide).
+deck.gl v6.0 brings in luma.gl v6.0 which is a major release with a few breaking changes. The change that is most likely to affect deck.gl applications is probably that the way the `GL` constant is imported has changed. For details, see to the luma.gl [Upgrade Guide](https://luma.gl/docs/upgrade-guide).
 
 
 #### Pixel sizes
