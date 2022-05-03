@@ -1,4 +1,4 @@
-import {extent} from 'd3-array';
+import {deviation, extent, groupSort, median, variance} from 'd3-array';
 import {rgb} from 'd3-color';
 import {
   scaleLinear,
@@ -7,7 +7,8 @@ import {
   scalePoint,
   scaleQuantile,
   scaleQuantize,
-  scaleSqrt
+  scaleSqrt,
+  scaleThreshold
 } from 'd3-scale';
 import {format as d3Format} from 'd3-format';
 import moment from 'moment-timezone';
@@ -27,15 +28,27 @@ const SCALE_FUNCS = {
   point: scalePoint,
   quantile: scaleQuantile,
   quantize: scaleQuantize,
-  sqrt: scaleSqrt
+  sqrt: scaleSqrt,
+  custom: scaleThreshold
 };
 export type SCALE_TYPE = keyof typeof SCALE_FUNCS;
+
+const UNKNOWN_COLOR = '#868d91';
 
 export const AGGREGATION = {
   average: 'MEAN',
   maximum: 'MAX',
   minimum: 'MIN',
   sum: 'SUM'
+};
+
+const AGGREGATION_FUNC = {
+  'count unique': (values, accessor) => groupSort(values, v => v.length, accessor).length,
+  median,
+  // Unfortunately mode() is only available in d3-array@3+ which is ESM only
+  mode: (values, accessor) => groupSort(values, v => v.length, accessor).pop(),
+  stddev: deviation,
+  variance
 };
 
 const hexToRGBA = c => {
@@ -75,12 +88,9 @@ const aggregationVisConfig = {
   percentile: ['lowerPercentile', 'upperPercentile']
 };
 
-const RADIUS_DOWNSCALE = 0.2;
-
 const defaultProps = {
   lineMiterLimit: 2,
   lineWidthUnits: 'pixels',
-  pointRadiusScale: RADIUS_DOWNSCALE,
   pointRadiusUnits: 'pixels',
   rounded: true,
   wrapLongitude: false
@@ -109,8 +119,7 @@ export function getLayer(
       propMap: {visConfig: {outline: 'stroked'}}
     },
     geojson: {
-      Layer: GeoJsonLayer,
-      defaultProps: {lineWidthScale: 2}
+      Layer: GeoJsonLayer
     },
     grid: {
       Layer: CPUGridLayer,
@@ -154,8 +163,6 @@ function getTileLayer(dataset) {
     propMap: sharedPropMap,
     defaultProps: {
       ...defaultProps,
-      pointRadiusScale: 0.3,
-      lineWidthScale: 2,
       uniqueIdProperty: 'geoid',
       formatTiles
     }
@@ -176,7 +183,11 @@ function domainFromAttribute(attribute, scaleType: SCALE_TYPE) {
 
 function domainFromValues(values, scaleType: SCALE_TYPE) {
   if (scaleType === 'ordinal') {
-    return [...new Set(values)].sort();
+    return groupSort(
+      values,
+      g => -g.length,
+      d => d
+    );
   } else if (scaleType === 'quantile') {
     return values.sort((a, b) => a - b);
   } else if (scaleType === 'log') {
@@ -214,16 +225,40 @@ function normalizeAccessor(accessor, data) {
   return accessor;
 }
 
+export function getColorValueAccessor({name}, colorAggregation, data: any) {
+  const aggregator = AGGREGATION_FUNC[colorAggregation];
+  const accessor = values => aggregator(values, p => p[name]);
+  return normalizeAccessor(accessor, data);
+}
+
 export function getColorAccessor(
   {name},
   scaleType: SCALE_TYPE,
-  {colors},
+  {colors, colorMap},
   opacity: number | undefined,
   data: any
 ) {
   const scale = SCALE_FUNCS[scaleType as any]();
-  scale.domain(calculateDomain(data, name, scaleType));
-  scale.range(colors);
+  let domain: (string | number)[] = [];
+  let scaleColor: string[] = [];
+
+  if (Array.isArray(colorMap)) {
+    colorMap.forEach(([value, color]) => {
+      domain.push(value);
+      scaleColor.push(color);
+    });
+  } else {
+    domain = calculateDomain(data, name, scaleType);
+    scaleColor = colors;
+  }
+
+  if (scaleType === 'ordinal') {
+    domain = domain.slice(0, scaleColor.length);
+  }
+
+  scale.domain(domain);
+  scale.range(scaleColor);
+  scale.unknown(UNKNOWN_COLOR);
   const alpha = opacity !== undefined ? Math.round(255 * Math.pow(opacity, 1 / 2.2)) : 255;
 
   const accessor = properties => {
@@ -266,10 +301,7 @@ export function getTextPixelOffsetAccessor({alignment, anchor, size}, radius) {
   const signY = alignment === 'center' ? 0 : alignment === 'bottom' ? 1 : -1;
   const sizeOffset = alignment === 'center' ? 0 : size;
 
-  const calculateOffset = r => {
-    r = RADIUS_DOWNSCALE * r;
-    return [signX * (r + padding), signY * (r + padding + sizeOffset)];
-  };
+  const calculateOffset = r => [signX * (r + padding), signY * (r + padding + sizeOffset)];
 
   return typeof radius === 'function'
     ? d => {
