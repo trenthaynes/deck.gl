@@ -7,11 +7,11 @@ const defaultProps = {
 export default class QuadkeyTileLayer extends TileLayer {
   tileToQuadkey(tile) {
     let index = '';
-    for (let z = tile.z; z > 0; z--) {
+    for (let z = tile.index.z; z > 0; z--) {
       let b = 0;
       const mask = 1 << (z - 1);
-      if ((tile.x & mask) !== 0) b++;
-      if ((tile.y & mask) !== 0) b += 2;
+      if ((tile.index.x & mask) !== 0) b++;
+      if ((tile.index.y & mask) !== 0) b += 2;
       index += b.toString();
     }
     return index;
@@ -21,9 +21,9 @@ export default class QuadkeyTileLayer extends TileLayer {
     const {data, fetch} = this.props;
     const {signal} = tile;
     const quadkey = this.tileToQuadkey(tile);
-    tile.url = data.replace(/\{i\}/g, quadkey);
 
-    if (tile.url) {
+    if (data) {
+      tile.url = data.replace(/\{i\}/g, quadkey);
       return fetch(tile.url, {propName: 'data', layer: this, signal});
     }
     return null;
