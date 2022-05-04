@@ -13,6 +13,7 @@ import QuadkeyTileLayer from './QuadkeyTileLayer';
 import Checkbox from './Checkbox';
 import ObjectSelect from './ObjectSelect';
 import Querybox from './Querybox';
+import configSources from './configSources';
 
 const INITIAL_VIEW_STATE = {longitude: 7, latitude: 45.8039, zoom: 5.2, pitch: 30, bearing: 0};
 
@@ -28,6 +29,10 @@ function Root() {
   const [aggregationExp, setAggregationExp] = useState(
     'avg(population) as value, 0.1*avg(population) as elevation'
   );
+  const connections = Object.keys(configSources);
+  const [connection, setConnection] = useState(connections[0]);
+  const [source, setSource] = useState(configSources[connection][0]);
+  console.log(source)
   const [resolution, setResolution] = useState(6);
   const props = {aggregationExp, aggregationResLevel: resolution, extruded, outline, transitions, tilesUrl};
 
@@ -35,8 +40,8 @@ function Root() {
     async function getTilesUrl() {
       const {data} = await fetchLayerData({
         type: MAP_TYPES.TABLE,
-        connection: 'bigquery',
-        source: 'carto-dev-data.public.derived_spatialfeatures_che_quadgrid15_v1_yearly_v2',
+        connection,
+        source,
         geoColumn: 'quadkey:quadint',
         aggregationExp,
         aggregationResLevel: resolution,
@@ -48,7 +53,7 @@ function Root() {
     }
     getTilesUrl()
 
-  }, [aggregationExp, resolution])
+  }, [aggregationExp, resolution, connection, source])
 
   return (
     <>
@@ -68,6 +73,18 @@ function Root() {
         obj={RESOLUTIONS}
         value={resolution}
         onSelect={setResolution}
+      />
+      <ObjectSelect
+        title="connection"
+        obj={connections}
+        value={connection}
+        onSelect={setConnection}
+      />
+      <ObjectSelect
+        title="source"
+        obj={configSources[connection]}
+        value={source}
+        onSelect={setSource}
       />
     </>
   );
