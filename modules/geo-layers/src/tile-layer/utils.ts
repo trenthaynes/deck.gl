@@ -1,7 +1,7 @@
 import {Viewport} from '@deck.gl/core';
 import {Matrix4} from '@math.gl/core';
 import {getOSMTileIndices} from './tile-2d-traversal';
-import {Bounds, TileBoundingBox, TileIndex, ZRange} from './types';
+import {Bounds, TileBoundingBox, TileIndex, TileLoadProps, ZRange} from './types';
 
 const TILE_SIZE = 512;
 const DEFAULT_EXTENT: Bounds = [-Infinity, -Infinity, Infinity, Infinity];
@@ -63,15 +63,12 @@ function stringHash(s: string): number {
 
 export function getURLFromTemplate(
   template: string | string[],
-  tile: {
-    index: TileIndex;
-    id: string;
-  }
+  loadProps: TileLoadProps
 ): string | null {
   if (!template || !template.length) {
     return null;
   }
-  const {index, id} = tile;
+  const {index, id} = loadProps;
 
   if (Array.isArray(template)) {
     const i = stringHash(id) % template.length;

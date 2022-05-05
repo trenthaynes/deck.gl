@@ -119,3 +119,4 @@ export type {
   Color
 } from './types/layer-props';
 export type {PickingInfo} from './lib/picking/pick-info';
+export type {ConstructorOf} from './types/types';
