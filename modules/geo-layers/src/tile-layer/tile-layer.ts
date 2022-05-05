@@ -1,8 +1,8 @@
 import {
-  assert,
   ChangeFlags,
   CompositeLayer,
   CompositeLayerProps,
+  ConstructorOf,
   Layer,
   LayerProps,
   _flatten as flatten
@@ -115,6 +115,11 @@ export type TileLayerProps<DataT = any> = CompositeLayerProps<DataT> & {
    * @default 0
    */
   zoomOffset: number;
+
+  /**
+   * Tileset class that `TileLayer` uses for tile indexing.
+   */
+  TilesetClass: ConstructorOf<Tileset2D>;
 };
 
 /**
@@ -159,8 +164,7 @@ export default class TileLayer<
     context: any;
     changeFlags: ChangeFlags;
   }) {
-    assert(this.state);
-
+    // @ts-expect-error updateState is only called when previous state is initalized
     let {tileset} = this.state;
     const propsChanged = changeFlags.propsOrDataChanged || changeFlags.updateTriggersChanged;
     const dataChanged =
@@ -180,6 +184,7 @@ export default class TileLayer<
         tileset.reloadAll();
       } else {
         // some render options changed, regenerate sub layers now
+        // @ts-expect-error updateState is only called when previous state is initalized
         this.state.tileset.tiles.forEach(tile => {
           tile.layers = null;
         });
@@ -220,14 +225,17 @@ export default class TileLayer<
     };
   }
 
-  _updateTileset(): void {
-    assert(this.state && this.context);
+  private _updateTileset(): void {
+    // @ts-expect-error
     const {tileset} = this.state;
     const {zRange, modelMatrix} = this.props;
+    // @ts-expect-error
     const frameNumber = tileset.update(this.context.viewport, {zRange, modelMatrix});
     const {isLoaded} = tileset;
 
+    // @ts-expect-error
     const loadingStateChanged = this.state.isLoaded !== isLoaded;
+    // @ts-expect-error
     const tilesetChanged = this.state.frameNumber !== frameNumber;
 
     if (isLoaded && (loadingStateChanged || tilesetChanged)) {
@@ -239,12 +247,12 @@ export default class TileLayer<
       this.setState({frameNumber});
     }
     // Save the loaded state - should not trigger a rerender
+    // @ts-expect-error
     this.state.isLoaded = isLoaded;
   }
 
   _onViewportLoad(): void {
-    assert(this.state);
-
+    // @ts-expect-error
     const {tileset} = this.state;
     const {onViewportLoad} = this.props;
 
@@ -315,8 +323,8 @@ export default class TileLayer<
     }
   }
 
-  renderLayers(): Layer[] | null {
-    assert(this.state);
+  renderLayers(): Layer | null | LayersList {
+    // @ts-expect-error renderLayers is always defined at this state
     return this.state.tileset.tiles.map((tile: Tile2DHeader) => {
       const subLayerProps = this.getSubLayerPropsByTile(tile);
       // cache the rendered layer in the tile
@@ -331,6 +339,7 @@ export default class TileLayer<
           tile
         });
         tile.layers = flatten(layers, Boolean).map(layer =>
+          // @ts-expect-error
           layer.clone({
             tile,
             ...subLayerProps
