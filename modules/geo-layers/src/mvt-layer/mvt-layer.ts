@@ -66,11 +66,13 @@ export type MVTLayerProps<DataT = Feature> = TileLayerProps<DataT> & {
   loaders: Loader[];
 };
 
+type MVTParsedTile = Feature[] | BinaryFeatures;
 type ContentWGS84Cache = {_contentWGS84?: Feature[]};
+
 export default class MVTLayer<
   DataT extends Feature = Feature,
   PropsT extends MVTLayerProps<DataT> = MVTLayerProps<DataT>
-> extends TileLayer<DataT, PropsT> {
+> extends TileLayer<DataT, MVTParsedTile, PropsT> {
   static layerName = 'MVTLayer';
   static defaultProps = defaultProps;
 
@@ -210,9 +212,9 @@ export default class MVTLayer<
   renderSubLayers(
     props: PropsT & {
       id: string;
-      data: any;
+      data: MVTParsedTile;
       _offset: number;
-      tile: Tile2DHeader;
+      tile: Tile2DHeader<MVTParsedTile>;
     }
   ): LayersList {
     const {x, y, z} = props.tile.index;
@@ -303,7 +305,7 @@ export default class MVTLayer<
     };
   }
 
-  private getHighlightedObjectIndex(tile: Tile2DHeader): number {
+  private getHighlightedObjectIndex(tile: Tile2DHeader<MVTParsedTile>): number {
     // @ts-expect-error state if defined for instantiated layer
     const {hoveredFeatureId, hoveredFeatureLayerName, binary} = this.state;
     const {uniqueIdProperty, highlightedFeatureId} = this.props;
