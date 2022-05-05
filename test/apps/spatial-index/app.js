@@ -42,7 +42,7 @@ function Root() {
     async function getTilesUrl() {
       const {data} = await fetchLayerData({
         type: MAP_TYPES.TABLE,
-        connection: 'bigquery',
+        connection,
         source,
         geoColumn: 'quadint',
         aggregationExp,
