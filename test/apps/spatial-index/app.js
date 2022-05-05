@@ -16,6 +16,10 @@ import Querybox from './Querybox';
 import Zoombox from './Zoombox';
 import configSources from './configSources';
 
+const apiBaseUrl = 'http://localhost:8002'
+const accessToken =
+  '';
+
 const INITIAL_VIEW_STATE = {longitude: 7, latitude: 45.8039, zoom: 5, pitch: 30, bearing: 0};
 
 const transitions = {getElevation: {type: 'spring', stiffness: 0.005, damping: 0.075}};
@@ -40,11 +44,12 @@ function Root() {
 
   useEffect(() => {
     async function getTilesUrl() {
+      const geoColumn = source.endsWith('_quadkey') ? 'quadkey' : 'quadint';
       const {data} = await fetchLayerData({
         type: MAP_TYPES.TABLE,
         connection,
         source,
-        geoColumn: 'quadint',
+        geoColumn,
         aggregationExp,
         aggregationResLevel: resolution,
         format: 'tilejson',
@@ -104,11 +109,6 @@ function Root() {
     </>
   );
 }
-
-const apiBaseUrl = 'http://localhost:8002'
-const accessToken =
-  'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJYVnRIYUdzaTUxMFZZYml1YjA5ZCJ9.eyJodHRwOi8vYXBwLmNhcnRvLmNvbS9lbWFpbCI6ImFsYmVydG9AY2FydG9kYi5jb20iLCJodHRwOi8vYXBwLmNhcnRvLmNvbS9hY2NvdW50X2lkIjoiYWNfNnFyMWswYWQiLCJpc3MiOiJodHRwczovL2F1dGgubG9jYWwuY2FydG8uY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTA4NDA5NTYzMzQxMzU5MDQxNjg0IiwiYXVkIjoiY2FydG8tY2xvdWQtbmF0aXZlLWFwaSIsImlhdCI6MTY1MTY2OTgxOSwiZXhwIjoxNjUxNzU2MjE5LCJhenAiOiJGM2tKOVJoUWhFTUFodDFRQllkQUluckRRTXJKVlI4dSIsInNjb3BlIjoicmVhZDpjdXJyZW50X3VzZXIiLCJwZXJtaXNzaW9ucyI6WyJhZG1pbjphY2NvdW50IiwicmVhZDphY2NvdW50IiwicmVhZDphcHBzIiwicmVhZDpjb25uZWN0aW9ucyIsInJlYWQ6Y3VycmVudF91c2VyIiwicmVhZDppbXBvcnRzIiwicmVhZDpsaXN0ZWRfYXBwcyIsInJlYWQ6bWFwcyIsInJlYWQ6dGlsZXNldHMiLCJyZWFkOnRva2VucyIsInVwZGF0ZTpjdXJyZW50X3VzZXIiLCJ3cml0ZTphcHBzIiwid3JpdGU6Y29ubmVjdGlvbnMiLCJ3cml0ZTppbXBvcnRzIiwid3JpdGU6bGlzdGVkX2FwcHMiLCJ3cml0ZTptYXBzIiwid3JpdGU6dG9rZW5zIl19.o8txflllJMThqtO20z0oRQRn_6DZD8cCVOXz6N8TH3X9kQx-L1V2XTTVUVFoxcA6kKfhLK2gqbPo2ax0rR7oj4nrZxrrQkOXTY7mC1pCdoDsRGAJt8abWbbnpbOsILd54LAJqeqaZN8XCs3zEO5gpAUmT53aY3E4pkcJtiRCOGUGQWNkjXCmd25xs7CrLxvDto-vVQ2F5ODaWq3bl4wjc92rIvixf1_RLZXd9_2gQ6pmxZZwg_GhEpF0q042UngOhpqNYXCERL9DsX_Q3hgGJKwg8v6OGWWQuA_WRwkRyzWJayDrT75MO31vJ4O40NNovqc_NNRO67-TWOClRT-dtg';
-
 
 
 function createQuadkeyTileLayer(props) {

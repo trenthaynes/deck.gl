@@ -7,6 +7,13 @@ export default {
       'carto-dev-data.public.derived_spatialfeatures_ukr_quadgrid15_v1_yearly_v2',
       'carto-dev-data.public.derived_spatialfeatures_ukr_quadgrid18_v1_yearly_v2',
       'carto-dev-data.public.derived_spatialfeatures_usa_quadgrid15_v1_yearly_v2',
+      'carto-dev-data.public.derived_spatialfeatures_che_quadgrid15_v1_yearly_v2_quadkey',
+      'carto-dev-data.public.derived_spatialfeatures_che_quadgrid18_v1_yearly_v2_quadkey',
+      'carto-dev-data.public.derived_spatialfeatures_esp_quadgrid15_v1_yearly_v2_quadkey',
+      'carto-dev-data.public.derived_spatialfeatures_esp_quadgrid18_v1_yearly_v2_quadkey',
+      'carto-dev-data.public.derived_spatialfeatures_ukr_quadgrid15_v1_yearly_v2_quadkey',
+      'carto-dev-data.public.derived_spatialfeatures_ukr_quadgrid18_v1_yearly_v2_quadkey',
+      'carto-dev-data.public.derived_spatialfeatures_usa_quadgrid15_v1_yearly_v2_quadkey',
   ],
   'snowflake': [
     'carto_dev_data.public.derived_spatialfeatures_che_quadgrid15_v1_yearly_v2',
