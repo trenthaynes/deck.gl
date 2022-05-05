@@ -57,6 +57,7 @@ function Root() {
 
   }, [aggregationExp, resolution, connection, source])
 
+
   return (
     <>
       <DeckGL
@@ -113,6 +114,8 @@ const accessToken =
 function createQuadkeyTileLayer(props) {
   const {aggregationResLevel, extruded, outline, transitions, tilesUrl, maxResolution} = props;
 
+  if (!tilesUrl) return;
+
   return new QuadkeyTileLayer({
     //        http://localhost:8002/v3/maps/bigquery/table/?aggregationExp=avg%28population%29+as+value%2C+0.1*avg%28population%29+as+elevation&name=carto-dev-data.public.derived_spatialfeatures_che_quadgrid15_v1_yearly_v2&formatTiles=json&aggregationResLevel=4&maxResolution=15&access_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJYVnRIYUdzaTUxMFZZYml1YjA5ZCJ9.eyJodHRwOi8vYXBwLmNhcnRvLmNvbS9lbWFpbCI6ImFsYmVydG9AY2FydG9kYi5jb20iLCJodHRwOi8vYXBwLmNhcnRvLmNvbS9hY2NvdW50X2lkIjoiYWNfNnFyMWswYWQiLCJpc3MiOiJodHRwczovL2F1dGgubG9jYWwuY2FydG8uY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTA4NDA5NTYzMzQxMzU5MDQxNjg0IiwiYXVkIjoiY2FydG8tY2xvdWQtbmF0aXZlLWFwaSIsImlhdCI6MTY1MTU4MTk4MywiZXhwIjoxNjUxNjY4MzgzLCJhenAiOiJGM2tKOVJoUWhFTUFodDFRQllkQUluckRRTXJKVlI4dSIsInNjb3BlIjoicmVhZDpjdXJyZW50X3VzZXIiLCJwZXJtaXNzaW9ucyI6WyJhZG1pbjphY2NvdW50IiwicmVhZDphY2NvdW50IiwicmVhZDphcHBzIiwicmVhZDpjb25uZWN0aW9ucyIsInJlYWQ6Y3VycmVudF91c2VyIiwicmVhZDppbXBvcnRzIiwicmVhZDpsaXN0ZWRfYXBwcyIsInJlYWQ6bWFwcyIsInJlYWQ6dGlsZXNldHMiLCJyZWFkOnRva2VucyIsInVwZGF0ZTpjdXJyZW50X3VzZXIiLCJ3cml0ZTphcHBzIiwid3JpdGU6Y29ubmVjdGlvbnMiLCJ3cml0ZTppbXBvcnRzIiwid3JpdGU6bGlzdGVkX2FwcHMiLCJ3cml0ZTptYXBzIiwid3JpdGU6dG9rZW5zIl19.TOhP1FcNHORHEyMn7nMn3NiljjDke5A7a2kE7FHKDlmvQ5UW1VOQNpfLuJX79Rg1IkvOmI0E5kOPyXMFp48yU__uHD290MSyR28XQ03ASdad7V59XcL2UjjAatwYVOTyW5vCMYcbKqgg7n3aF1swRkFo01tVjfcDYsDslIgXI09Ma2ngVZC55rS9-abq16wcPSV5OHcBd3gwim3Wb3xxexHeomlk1dHdK0L5Qx0jmT1IACe1LMyk7aSkPAYtBcKQwiWlLmmZka4FDsli9yJoIqBCu9T8qZKXd1gK8xyau-9q9M23gwVHo9tdgc68wntz4UU3ExPNijJzOsBW1QZpjA&geo_column=quadkey%3Aquadint
     // data: `http://localhost:8002/v3/maps/bigquery/table/{i}?name=carto-dev-data.public.derived_spatialfeatures_che_quadgrid15_v1_yearly_v2&geo_column=quadkey:quadint&aggregationExp=${aggregationExp}&aggregationResLevel=${aggregationResLevel}&maxResolution=15&access_token=${accessToken}`,
@@ -131,15 +134,15 @@ function createQuadkeyTileLayer(props) {
           pickable: true,
           getQuadkey: d => d.id,
           getFillColor: d => [
-            Math.pow(d.properties.value / 200, 0.1) * 255,
-            255 - d.properties.value,
+            Math.pow((d.properties.value || d.properties.VALUE) / 200, 0.1) * 255,
+            255 - (d.properties.value || d.properties.VALUE),
             79
           ],
           getElevation: d =>
             extruded
               ? 'elevation' in d.properties
                 ? d.properties.elevation
-                : d.properties.value
+                : (d.properties.value || d.properties.VALUE)
               : 0,
           transitions,
           updateTriggers: {
