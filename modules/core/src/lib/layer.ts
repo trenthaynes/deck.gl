@@ -46,7 +46,7 @@ import type {StatefulComponentProps} from '../lifecycle/component';
 import type Attribute from './attribute/attribute';
 import type {LayerProps} from '../types/layer-props';
 import type {Model} from '@luma.gl/engine';
-import type {PickingInfo} from './picking/pick-info';
+import type {PickingInfo, PickingInfoProps} from './picking/pick-info';
 import type Viewport from '../viewports/viewport';
 import type {NumericArray} from '../types/types';
 import type {LayerContext} from './layer-manager';
@@ -471,7 +471,7 @@ export default abstract class Layer<
 
   // called to populate the info object that is passed to the event handler
   // @return null to cancel event
-  getPickingInfo({info, mode, sourceLayer}) {
+  getPickingInfo({info, mode, sourceLayer}: PickingInfoProps) {
     const {index} = info;
 
     if (index >= 0) {

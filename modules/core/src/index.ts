@@ -116,5 +116,5 @@ export type {OrthographicViewState} from './views/orthographic-view';
 export type {GlobeViewState} from './views/globe-view';
 export type {ChangeFlags} from './lib/layer-state';
 export type {LayersList} from './lib/layer-manager';
-export type {PickingInfo} from './lib/picking/pick-info';
+export type {PickingInfo, PickingInfoProps} from './lib/picking/pick-info';
 export type {ConstructorOf} from './types/types';
