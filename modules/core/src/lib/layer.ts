@@ -160,6 +160,13 @@ export type UpdateParameters<PropsT> = {
   changeFlags: ChangeFlags;
 };
 
+export type UpdateParameters2<LayerT extends Layer> = {
+  props: LayerT['props'];
+  oldProps: LayerT['props'];
+  context: LayerContext;
+  changeFlags: ChangeFlags;
+};
+
 export default abstract class Layer<PropsT = any> extends Component<PropsT> {
   static defaultProps: any = defaultProps;
   static layerName: string = 'Layer';
@@ -402,8 +409,9 @@ export default abstract class Layer<PropsT = any> extends Component<PropsT> {
     return params.changeFlags.propsOrDataChanged;
   }
 
-  /* eslint-disable-next-line complexity */
   /** Default implementation, all attributes will be invalidated and updated when data changes */
+  // updateState(params: UpdateParameters2<this>): void;
+  /* eslint-disable-next-line complexity */
   updateState(params: UpdateParameters<PropsT>): void {
     const attributeManager = this.getAttributeManager();
     const {dataChanged} = params.changeFlags;

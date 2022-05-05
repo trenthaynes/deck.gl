@@ -17,7 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-import Layer, {UpdateParameters} from './layer';
+import Layer, {UpdateParameters, UpdateParameters2} from './layer';
 import debug from '../debug';
 import {flatten} from '../utils/flatten';
 
@@ -253,7 +253,7 @@ export default abstract class CompositeLayer<PropsT = any> extends Layer<
   }
 
   /** (Internal) Called after an update to rerender sub layers */
-  protected _postUpdate(updateParams: UpdateParameters<PropsT>, forceUpdate: boolean) {
+  protected _postUpdate(updateParams: UpdateParameters2<CompositeLayer>, forceUpdate: boolean) {
     // @ts-ignore (TS2531) this method is only called internally when internalState is defined
     let subLayers = this.internalState.subLayers as Layer[];
     const shouldUpdate = !subLayers || this.needsUpdate();

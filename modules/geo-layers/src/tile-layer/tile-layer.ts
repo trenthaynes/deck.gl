@@ -9,7 +9,9 @@ import {
   _flatten as flatten
 } from '@deck.gl/core';
 import {GeoJsonLayer} from '@deck.gl/layers';
+import { UpdateParameters2 } from 'modules/core/src/lib/layer';
 import {LayersList} from 'modules/core/src/lib/layer-manager';
+import Component from 'modules/core/src/lifecycle/component';
 import Tile2DHeader from './tile-2d-header';
 
 import Tileset2D, {RefinementStrategy, STRATEGY_DEFAULT, Tileset2DProps} from './tileset-2d';
@@ -44,7 +46,7 @@ const defaultProps = {
 export type TileLayerProps<DataT> = _TileLayerProps<DataT> & CompositeLayerProps<DataT>;
 
 /** Props added by the TileLayer */
-type _TileLayerProps<DataT> = {
+export type _TileLayerProps<DataT> = {
   /**
    * Optionally implement a custom indexing scheme.
    */
@@ -130,6 +132,8 @@ type _TileLayerProps<DataT> = {
   zoomOffset?: number;
 };
 
+export type ComponentProps<T extends Component> = T["props"]
+
 /**
  * The TileLayer is a composite layer that makes it possible to visualize very large datasets.
  *
@@ -163,6 +167,7 @@ export default class TileLayer<DataT = any, ExtraPropsT = {}> extends CompositeL
   }
 
   updateState({changeFlags}: UpdateParameters<ExtraPropsT & Required<_TileLayerProps<DataT>>>) {
+  // updateState({props,changeFlags}: UpdateParameters2<this>) {
     // @ts-expect-error updateState is only called when previous state is initalized
     let {tileset} = this.state;
     const propsChanged = changeFlags.propsOrDataChanged || changeFlags.updateTriggersChanged;
@@ -297,7 +302,7 @@ export default class TileLayer<DataT = any, ExtraPropsT = {}> extends CompositeL
   }
 
   renderSubLayers(
-    props: _TileLayerProps<DataT> & {
+    props: ComponentProps<this> & {
       id: string;
       data: any;
       _offset: number;

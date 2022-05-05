@@ -7,7 +7,8 @@ import {
   PickingInfoProps,
   Viewport,
   _GlobeViewport,
-  COORDINATE_SYSTEM
+  COORDINATE_SYSTEM,
+  UpdateParameters
 } from '@deck.gl/core';
 import {Matrix4} from '@math.gl/core';
 import {MVTWorkerLoader} from '@loaders.gl/mvt';
@@ -18,15 +19,16 @@ import type {Loader} from '@loaders.gl/loader-utils';
 import type {BinaryFeatures} from '@loaders.gl/schema';
 import type {Feature} from 'geojson';
 
-import TileLayer, {TileLayerProps} from '../tile-layer/tile-layer';
+import TileLayer, {TileLayerProps, _TileLayerProps} from '../tile-layer/tile-layer';
 import Tileset2D, {Tileset2DProps} from '../tile-layer/tileset-2d';
 import {getURLFromTemplate, isURLTemplate} from '../tile-layer/utils';
-import {GeoBoundingBox, TileLoadProps} from '../tile-layer/types';
+import {TileLoadProps} from '../tile-layer/types';
 import Tile2DHeader from '../tile-layer/tile-2d-header';
 import {transform} from './coordinate-transform';
 import findIndexBinary from './find-index-binary';
 
 import {GeoJsonLayer} from '@deck.gl/layers';
+import {UpdateParameters2} from 'modules/core/src/lib/layer';
 
 const WORLD_SIZE = 512;
 
@@ -49,8 +51,9 @@ export type TileJson = {
   minzoom?: number;
   version?: string;
 };
+export type MVTLayerProps<DataT = Feature> = _MVTLayerProps & TileLayerProps<DataT>;
 
-export type MVTLayerProps<DataT = Feature> = TileLayerProps<DataT> & {
+export type _MVTLayerProps = {
   /** Called if `data` is a TileJSON URL when it is successfully fetched. */
   onDataLoad?: ((tilejson: TileJson | null) => void) | null;
 
@@ -66,10 +69,10 @@ export type MVTLayerProps<DataT = Feature> = TileLayerProps<DataT> & {
   loaders: Loader[];
 };
 
-export default class MVTLayer<
-  DataT extends Feature = Feature,
-  PropsT extends MVTLayerProps<DataT> = MVTLayerProps<DataT>
-> extends TileLayer<DataT, PropsT> {
+export default class MVTLayer<DataT extends Feature = Feature, ExtraPropsT = {}> extends TileLayer<
+  DataT,
+  ExtraPropsT & Required<_MVTLayerProps>
+> {
   static layerName = 'MVTLayer';
   static defaultProps = defaultProps;
 
@@ -94,12 +97,8 @@ export default class MVTLayer<
     oldProps,
     context,
     changeFlags
-  }: {
-    props: PropsT;
-    oldProps: PropsT;
-    context: any;
-    changeFlags: ChangeFlags;
-  }) {
+  }: UpdateParameters<ExtraPropsT & Required<_MVTLayerProps> & Required<_TileLayerProps<DataT>>>) {
+    // updateState({props, oldProps, context, changeFlags}: UpdateParameters2<this>) {
     if (changeFlags.dataChanged) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this._updateTileData();
