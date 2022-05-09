@@ -129,8 +129,10 @@ function getParameters({
   columns,
   clientId,
   aggregationExp,
-  aggregationResLevel
-}: Omit<FetchLayerDataParams, 'connection' | 'credentials'>) {
+  aggregationResLevel,
+  timeRangeFrom,
+  timeRangeTo
+}: Omit<FetchLayerDataParams, 'connection' | 'credentials'> & { timeRangeFrom, timeRangeTo }) {
   const parameters = [encodeParameter('client', clientId || DEFAULT_CLIENT)];
 
   const sourceName = type === MAP_TYPES.QUERY ? 'q' : 'name';
@@ -147,6 +149,12 @@ function getParameters({
   }
   if (aggregationResLevel) {
     parameters.push(encodeParameter('aggregationResLevel', aggregationResLevel));
+  }
+  if (timeRangeFrom) {
+    parameters.push(encodeParameter('timeRangeFrom', timeRangeFrom));
+  }
+  if (timeRangeTo) {
+    parameters.push(encodeParameter('timeRangeTo', timeRangeTo));
   }
 
   return parameters.join('&');
@@ -171,7 +179,10 @@ export async function mapInstantiation({
     columns,
     clientId,
     aggregationExp,
-    aggregationResLevel
+    aggregationResLevel,
+    timeRangeFrom: '2022-01-01',
+    timeRangeTo: '2022-01-03'
+
   })}`;
   const {accessToken} = credentials;
 
