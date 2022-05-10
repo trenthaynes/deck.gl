@@ -6,12 +6,14 @@ export default function colorBins({
   attr,
   domain,
   colors = DEFAULT_PALETTE,
-  nullColor = NULL_COLOR
+  nullColor = NULL_COLOR,
+  attributeParseFunction
 }: {
   attr: AttributeSelector;
   domain: number[];
   colors?: string | Color[];
   nullColor?: Color;
+  attributeParseFunction?: (value) => number
 }): AttributeSelector {
   assert(Array.isArray(domain), 'Expected "domain" to be an array of numbers');
 
@@ -20,7 +22,12 @@ export default function colorBins({
   const color = scaleThreshold<number, Color>().domain(domain).range(palette);
 
   return d => {
-    const value = getAttrValue(attr, d);
+    let parsedValue
+    const originalValue = getAttrValue(attr, d);
+    if (attributeParseFunction) {
+      parsedValue = attributeParseFunction(originalValue)
+    }
+    const value = typeof parsedValue === 'number' && Number.isFinite(parsedValue) ? parsedValue : originalValue
     return typeof value === 'number' && Number.isFinite(value) ? color(value) : nullColor;
   };
 }

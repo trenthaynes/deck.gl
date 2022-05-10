@@ -117,6 +117,8 @@ type FetchLayerDataParams = {
   formatTiles?: TileFormat;
   aggregationExp?: string;
   aggregationResLevel?: number;
+  timeRangeFrom?: string,
+  timeRangeTo?: string,
 };
 
 /**
@@ -169,7 +171,9 @@ export async function mapInstantiation({
   columns,
   clientId,
   aggregationExp,
-  aggregationResLevel
+  aggregationResLevel,
+  timeRangeFrom,
+  timeRangeTo
 }: FetchLayerDataParams): Promise<MapInstantiation> {
   const baseUrl = `${credentials.mapsUrl}/${connection}/${type}`;
   const url = `${baseUrl}?${getParameters({
@@ -180,9 +184,8 @@ export async function mapInstantiation({
     clientId,
     aggregationExp,
     aggregationResLevel,
-    timeRangeFrom: '2022-01-01',
-    timeRangeTo: '2022-01-03'
-
+    timeRangeFrom,
+    timeRangeTo
   })}`;
   const {accessToken} = credentials;
 
@@ -254,6 +257,7 @@ export interface FetchLayerDataResult {
   data: any;
   format?: Format;
   schema: SchemaField[];
+  timeserie?: any
 }
 export async function fetchLayerData({
   type,
@@ -266,7 +270,9 @@ export async function fetchLayerData({
   formatTiles,
   clientId,
   aggregationExp,
-  aggregationResLevel
+  aggregationResLevel,
+  timeRangeFrom,
+  timeRangeTo
 }: FetchLayerDataParams): Promise<FetchLayerDataResult> {
   // Internally we split data fetching into two parts to allow us to
   // conditionally fetch the actual data, depending on the metadata state
@@ -281,11 +287,13 @@ export async function fetchLayerData({
     formatTiles,
     clientId,
     aggregationExp,
-    aggregationResLevel
+    aggregationResLevel,
+    timeRangeFrom,
+    timeRangeTo
   });
 
   const data = await requestData({url, format: mapFormat, accessToken});
-  const result: FetchLayerDataResult = {data, format: mapFormat, schema: metadata.schema};
+  const result: FetchLayerDataResult = {data, format: mapFormat, schema: metadata.schema, timeserie: metadata.timeserie};
   return result;
 }
 
@@ -300,7 +308,9 @@ async function _fetchDataUrl({
   formatTiles,
   clientId,
   aggregationExp,
-  aggregationResLevel
+  aggregationResLevel,
+  timeRangeFrom,
+  timeRangeTo
 }: FetchLayerDataParams) {
   const defaultCredentials = getDefaultCredentials();
   // Only pick up default credentials if they have been defined for
@@ -333,7 +343,9 @@ async function _fetchDataUrl({
     columns,
     clientId,
     aggregationExp,
-    aggregationResLevel
+    aggregationResLevel,
+    timeRangeFrom,
+    timeRangeTo
   });
   let url: string | null = null;
   let mapFormat: Format | undefined;
@@ -398,7 +410,7 @@ async function _fetchMapDataset(
   credentials: CloudNativeCredentials,
   clientId?: string
 ) {
-  const {connectionName: connection, columns, format, geoColumn, source, type} = dataset;
+  const {connectionName: connection, columns, format, geoColumn, source, type,   timeRangeFrom, timeRangeTo} = dataset;
   // First fetch metadata
   const {url, mapFormat} = await _fetchDataUrl({
     clientId,
@@ -408,7 +420,9 @@ async function _fetchMapDataset(
     format,
     geoColumn,
     source,
-    type
+    type,
+    timeRangeFrom,
+    timeRangeTo
   });
 
   // Extract the last time the data changed

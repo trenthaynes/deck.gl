@@ -57,6 +57,7 @@ export interface SchemaField {
 }
 
 export interface MapInstantiation extends MapInstantiationFormats {
+  timeserie?: { granularity: string, steps: string[] };
   nrows: number;
   size?: number;
   schema: SchemaField[];
