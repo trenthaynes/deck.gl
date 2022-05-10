@@ -34,7 +34,6 @@ function Root() {
   const [dateRange, setDateRange] = useState(moment.range(moment().startOf('year'), moment()))
   const [timeserie, setTimeserie] = useState({})
   const [selectedSteps, setSelectedSteps] = useState([])
-  console.log(selectedSteps)
 
   const handleSelectStep = (steps) => {
     const indices = steps.map(step => timeserie.steps.findIndex(s => s === step))
