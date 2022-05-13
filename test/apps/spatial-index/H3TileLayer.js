@@ -34,7 +34,7 @@ export default class H3TileLayer extends TileLayer {
     tile.url = data.replace(/\{i\}/g, index);
 
     // HACK skip tiles without data
-    if (!h3Available.includes(index)) return [];
+    // if (!h3Available.includes(index)) return [];
 
     if (tile.url) {
       return fetch(tile.url, {propName: 'data', layer: this, signal});
