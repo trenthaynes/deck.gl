@@ -19,7 +19,7 @@ const apiBaseUrl = 'https://direct-gcp-us-east1.api.carto.com';
 // Localhost
 // const apiBaseUrl = 'http://localhost:8002'
 
-const accessToken = 'XXX';
+const accessToken = '';
 
 const showBasemap = true;
 const showCarto = true;
@@ -106,6 +106,7 @@ function createCarto({connection, type, data, formatTiles}) {
 
     format: FORMATS.TILEJSON,
     formatTiles,
+    // formatTiles: 'mvt',
 
     // Styling
     getFillColor: [233, 71, 251],
